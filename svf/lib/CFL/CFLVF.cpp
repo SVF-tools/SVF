@@ -92,7 +92,7 @@ void CFLVF::finalize()
     if(Options::PrintCFL())
     {
         if (Options::CFLGraph().empty())
-            pag->dump("IR");
+            pag->dump("PAG");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }

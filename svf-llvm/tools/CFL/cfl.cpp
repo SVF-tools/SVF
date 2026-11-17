@@ -47,7 +47,7 @@ int main(int argc, char ** argv)
                         argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
                     );
 
-    // Pointer to the SVF Intermediate Representation (IR) of the module
+    // Pointer to the PAG of the module
     PAG* pag = nullptr;
 
     // If no CFLGraph option is specified, the PAG is built from the .bc (bytecode) files of the modules

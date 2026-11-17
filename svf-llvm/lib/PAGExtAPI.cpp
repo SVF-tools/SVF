@@ -1,4 +1,4 @@
-//===- PAGExtAPI.cpp -- External function IR of SVF ---------------------------------------------//
+//===- PAGExtAPI.cpp -- External function PAG --------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

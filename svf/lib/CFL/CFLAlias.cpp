@@ -219,7 +219,7 @@ void CFLAlias::finalize()
     if(Options::PrintCFL() == true)
     {
         if (Options::CFLGraph().empty())
-            pag->dump("IR");
+            pag->dump("PAG");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
