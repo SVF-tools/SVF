@@ -66,11 +66,17 @@ const std::string GenericBug::getFuncName() const
 
 cJSON *BufferOverflowBug::getBugDescription() const
 {
+    const auto endpoint = [](const BoundedInt& value)
+    {
+        if (value.is_infinity())
+            return cJSON_CreateString(value.is_plus_infinity() ? "+oo" : "-oo");
+        return cJSON_CreateNumber(value.getNumeral());
+    };
     cJSON *bugDescription = cJSON_CreateObject();
-    cJSON *allocLB = cJSON_CreateNumber(allocLowerBound);
-    cJSON *allocUB = cJSON_CreateNumber(allocUpperBound);
-    cJSON *accessLB = cJSON_CreateNumber(accessLowerBound);
-    cJSON *accessUB = cJSON_CreateNumber(accessUpperBound);
+    cJSON *allocLB = endpoint(allocLowerBound);
+    cJSON *allocUB = endpoint(allocUpperBound);
+    cJSON *accessLB = endpoint(accessLowerBound);
+    cJSON *accessUB = endpoint(accessUpperBound);
 
     cJSON_AddItemToObject(bugDescription, "AllocLowerBound", allocLB);
     cJSON_AddItemToObject(bugDescription, "AllocUpperBound", allocUB);
@@ -82,6 +88,11 @@ cJSON *BufferOverflowBug::getBugDescription() const
 
 void BufferOverflowBug::printBugToTerminal() const
 {
+    const auto endpoint = [](const BoundedInt& value) -> std::string
+    {
+        if (value.is_infinity()) return value.is_plus_infinity() ? "+oo" : "-oo";
+        return std::to_string(value.getNumeral());
+    };
     stringstream bugInfo;
     if(FullBufferOverflowBug::classof(this))
     {
@@ -94,8 +105,8 @@ void BufferOverflowBug::printBugToTerminal() const
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
     }
-    bugInfo << "\t\t  allocate size : [" << allocLowerBound << ", " << allocUpperBound << "], ";
-    bugInfo << "access size : [" << accessLowerBound << ", " << accessUpperBound << "]\n";
+    bugInfo << "\t\t  allocate size : [" << endpoint(allocLowerBound) << ", " << endpoint(allocUpperBound) << "], ";
+    bugInfo << "access size : [" << endpoint(accessLowerBound) << ", " << endpoint(accessUpperBound) << "]\n";
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
 

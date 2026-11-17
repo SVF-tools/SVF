@@ -141,8 +141,7 @@ class BufOverflowDetector : public AEDetector
 public:
     struct BufferOverflowInfo
     {
-        u32_t bufferSize = 0;
-        u32_t bufferLowerBound = 0;
+        IntervalValue bufferSize = IntervalValue(0);
         IntervalValue accessOffset = IntervalValue(0);
     };
 
@@ -279,8 +278,8 @@ public:
 
         // Add the bug to the recorder with details from the event stack
         recoder.addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack,
-                              info.bufferLowerBound, info.bufferSize,
-                              info.accessOffset.lb().getNumeral(), info.accessOffset.ub().getNumeral());
+                              info.bufferSize.lb(), info.bufferSize.ub(),
+                              info.accessOffset.lb(), info.accessOffset.ub());
         nodeToBugInfo[node] = e.what(); // Record the exception information for the node
     }
 
