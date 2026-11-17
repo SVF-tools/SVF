@@ -572,7 +572,7 @@ IntervalValue AbsExtAPI::getStrncatLength(const CallICFGNode* call)
 }
 
 void AbsExtAPI::handleStringCopy(const CallICFGNode* call,
-        const IntervalValue& length, const IntervalValue& start)
+                                 const IntervalValue& length, const IntervalValue& start)
 {
     const ValVar* dst = call->getArgument(0);
     const ValVar* src = call->getArgument(1);
