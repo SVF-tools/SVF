@@ -114,8 +114,10 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                 // alarm with an unbounded size and the GEP's own byte offset.
                 if (hasUnknownSizeTarget)
                     addBugToReporter(AEException(stmt->toString()), node,
-                                     {IntervalValue(0, IntervalValue::plus_infinity()),
-                                      ae.getGepByteOffset(gep)});
+                {
+                    IntervalValue(0, IntervalValue::plus_infinity()),
+                    ae.getGepByteOffset(gep)
+                });
             }
         }
     }
