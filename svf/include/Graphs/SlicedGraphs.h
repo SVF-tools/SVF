@@ -301,9 +301,9 @@ class SlicedUnifiedView
 {
 public:
     SlicedUnifiedView(PAG* pag,
-                    ThreadCallGraph& callGraph,
-                    ICFG* icfg,
-                    const OrderedSet<const ICFGNode*>& keepNodes);
+                      ThreadCallGraph& callGraph,
+                      ICFG* icfg,
+                      const OrderedSet<const ICFGNode*>& keepNodes);
 
     /// Get SlicedICFGView
     inline const SlicedICFGView* getICFG() const

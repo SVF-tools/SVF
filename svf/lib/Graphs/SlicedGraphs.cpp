@@ -806,9 +806,9 @@ void SlicedThreadCallGraphView::dump(const std::string& filename) const
 //===----------------------------------------------------------------------===//
 
 SlicedUnifiedView::SlicedUnifiedView(PAG* pag,
-                                 ThreadCallGraph& callGraph,
-                                 ICFG* icfg,
-                                 const OrderedSet<const ICFGNode*>& keepNodes)
+                                     ThreadCallGraph& callGraph,
+                                     ICFG* icfg,
+                                     const OrderedSet<const ICFGNode*>& keepNodes)
     : pag(pag)
 {
     // A retained function is represented by explicit synthetic entry/exit

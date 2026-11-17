@@ -50,7 +50,7 @@ ObjTypeInfo* SymbolTableBuilder::createBlkObjTypeInfo(NodeID symId)
     if (pag->objTypeInfoMap.find(symId)==pag->objTypeInfoMap.end())
     {
         ObjTypeInfo* ti = pag->createObjTypeInfo(llvmset->getSVFType(
-                             IntegerType::get(llvmset->getContext(), 32)));
+                              IntegerType::get(llvmset->getContext(), 32)));
         ti->setNumOfElements(0);
         pag->objTypeInfoMap[symId] = ti;
     }

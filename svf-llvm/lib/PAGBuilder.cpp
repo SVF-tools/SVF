@@ -901,7 +901,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, S
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
 void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                                 u32_t offset)
+                               u32_t offset)
 {
     DBOUT(DPAGBuild, outs() << "global " << LLVMUtil::dumpValue(gvar)
           << " constant initializer: "
@@ -1473,7 +1473,7 @@ bool PAGBuilder::getAggregateFieldOperands(const AggregateFieldKey& field,
  *   }
  */
 bool PAGBuilder::getAggregateFieldNode(const Value* aggregate,
-        const AggregateField& indices, NodeID& node)
+                                       const AggregateField& indices, NodeID& node)
 {
     const AggregateFieldKey root{aggregate, indices};
     // Discovery order keeps field NodeIDs stable across -write-ander and
