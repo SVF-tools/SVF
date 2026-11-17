@@ -589,10 +589,10 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee))
     {
-        const SVFIR::ValVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
-        const SVFIR::ValVarList& funArgList = pag->getFunArgsList(callee);
-        SVFIR::ValVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
-        SVFIR::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        const PAG::ValVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
+        const PAG::ValVarList& funArgList = pag->getFunArgsList(callee);
+        PAG::ValVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
+        PAG::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
         {
             const ValVar *cs_arg = *csArgIt;
@@ -827,12 +827,12 @@ const Set<const SVFGNode*> SVFG::getUseSitesOfObjVar(const ObjVar* obj, const SV
 namespace SVF
 {
 template<>
-struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
+struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
 {
 
     typedef SVFGNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVFIR*>(isSimple)
+        DOTGraphTraits<PAG*>(isSimple)
     {
     }
 

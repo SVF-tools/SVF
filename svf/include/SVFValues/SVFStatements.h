@@ -28,8 +28,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_SVFSTATEMENT_H_
-#define INCLUDE_SVFIR_SVFSTATEMENT_H_
+#ifndef INCLUDE_PAG_SVFSTATEMENT_H_
+#define INCLUDE_PAG_SVFSTATEMENT_H_
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/AccessPath.h"
@@ -49,7 +49,7 @@ class FunExitICFGNode;
 class SVFBasicBlock;
 
 /*
- * SVFIR program statements (PAGEdges)
+ * PAG program statements (PAGEdges)
  */
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
@@ -57,7 +57,7 @@ class SVFStmt : public GenericPAGEdgeTy
     friend class GraphDBClient;
 
 public:
-    /// Types of SVFIR statements
+    /// Types of PAG statements
     /// Gep represents (base + offset) for field sensitivity
     /// ThreadFork/ThreadJoin is to model parameter passings between thread
     /// spawners and spawnees.
@@ -87,7 +87,7 @@ private:
     EdgeID edgeId;                   ///< Edge ID
 
 protected:
-    /// Private constructor for reading SVFIR from file without side-effect
+    /// Private constructor for reading PAG from file without side-effect
     SVFStmt(GEdgeFlag k)
         : GenericPAGEdgeTy({}, {}, k), value{}, basicBlock{}, icfgNode{}
     {
@@ -1412,4 +1412,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVFIR_SVFSTATEMENT_H_ */
+#endif /* INCLUDE_PAG_SVFSTATEMENT_H_ */

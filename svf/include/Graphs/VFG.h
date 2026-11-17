@@ -31,7 +31,7 @@
 #define INCLUDE_UTIL_VFG_H_
 
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Graphs/CallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
@@ -79,7 +79,7 @@ public:
     typedef VFGEdge::VFGEdgeSetTy::iterator VFGNodeIter;
     typedef VFGNodeIDToNodeMapTy::iterator iterator;
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
-    typedef SVFIR::SVFStmtSet SVFStmtSet;
+    typedef PAG::SVFStmtSet SVFStmtSet;
     typedef Set<const VFGNode*> GlobalVFGNodeSet;
     typedef Set<const SVFVar*> SVFVarSet;
 
@@ -101,7 +101,7 @@ protected:
 
     GlobalVFGNodeSet globalVFGNodes;	///< set of global store VFG nodes
     CallGraph* callgraph;
-    SVFIR* pag;
+    PAG* pag;
     VFGK kind;
 
     /// Clean up memory
@@ -129,8 +129,8 @@ public:
         return (kind == PTRONLYSVFG) || (kind == PTRONLYSVFG_OPT);
     }
 
-    /// Return SVFIR
-    inline SVFIR* getPAG() const
+    /// Return PAG
+    inline PAG* getPAG() const
     {
         return pag;
     }
@@ -331,12 +331,12 @@ public:
             const VFGNode* defNode = getVFGNode(getDef(valVar));
             if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(defNode))
             {
-                if (SVFIR::getPAG()->isBlkObjOrConstantObj(addr->getSVFStmt()->getSrcID()))
+                if (PAG::getPAG()->isBlkObjOrConstantObj(addr->getSVFStmt()->getSrcID()))
                     return true;
             }
             else if(const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(defNode))
             {
-                if (SVFIR::getPAG()->isNullPtr(copy->getSVFStmt()->getSrcID()))
+                if (PAG::getPAG()->isNullPtr(copy->getSVFStmt()->getSrcID()))
                     return true;
             }
         }
@@ -579,7 +579,7 @@ protected:
         setDef(load->getLHSVar(),sNode);
     }
     /// Add a Store VFG node,
-    /// To be noted store does not create a new pointer, we do not set def for any SVFIR node
+    /// To be noted store does not create a new pointer, we do not set def for any PAG node
     void addStoreVFGNode(const StoreStmt* store)
     {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
@@ -619,7 +619,7 @@ protected:
         SVFVarToFormalRetMap[uniqueFunRet] = sNode;
         /// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
         /// we will set this phi node's def later
-        /// Ideally, every function uniqueFunRet should be a PhiNode (SVFIRBuilder.cpp), unless it does not have ret instruction
+        /// Ideally, every function uniqueFunRet should be a PhiNode (PAGBuilder.cpp), unless it does not have ret instruction
         if (!pag->isPhiNode(uniqueFunRet))
         {
             std::string warn = fun->getName();

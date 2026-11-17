@@ -127,11 +127,11 @@ public:
 
     /// Builds a bidirectional CFL graph by copying nodes and edges from any graph that inherits from GenericGraph
     /// Transfers Load and Store to copy edge and address edge to construct PEG style CFLGraph
-    CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag);
+    CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, PAG* pag);
 
 private:
     /// Connects VGep (Variable GEP)
-    void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, SVFIR* pag);
+    void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, PAG* pag);
 
     /// Handles edges, with the exception of the GEP
     void addBiCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFGrammar::Kind label);
@@ -150,11 +150,11 @@ public:
 
     /// Builds a bidirectional CFL graph by copying nodes and edges from any graph that inherits from GenericGraph
     /// Transfers Load and Store to copy edge and address edge to construct PEG style CFLGraph
-    CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag);
+    CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, PAG* pag);
 
 private:
     /// Connects VGep (Variable GEP)
-    void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, SVFIR* pag);
+    void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, PAG* pag);
 
     /// Handles edges, with the exception of the GEP
     void addBiCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFGrammar::Kind label);

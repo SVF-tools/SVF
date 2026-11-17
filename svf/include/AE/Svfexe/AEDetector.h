@@ -26,7 +26,7 @@
 //      Author: Xiao Cheng, Jiawei Wang, Mingxiu Wang
 //
 #pragma once
-#include <SVFIR/SVFIR.h>
+#include <Graphs/PAG.h>
 #include <AE/Core/AbstractState.h>
 #include "Util/SVFBugReport.h"
 

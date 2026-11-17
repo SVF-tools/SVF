@@ -45,7 +45,7 @@ void TypeAnalysis::initialize()
     AndersenBase::initialize();
     if (Options::DumpICFG())
     {
-        icfg = SVFIR::getPAG()->getICFG();
+        icfg = PAG::getPAG()->getICFG();
         icfg->dump("icfg_initial");
         icfg->dump("vfg_initial");
         if (print_stat)

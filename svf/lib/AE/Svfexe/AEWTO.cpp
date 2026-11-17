@@ -34,10 +34,10 @@
 
 using namespace SVF;
 
-AEWTO::AEWTO(SVFIR* pag, ICFG* icfg)
-    : svfir(pag), icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
+AEWTO::AEWTO(PAG* pag, ICFG* icfg)
+    : icfg(icfg), pta(nullptr), callGraph(nullptr), callGraphSCC(nullptr)
 {
-    pta = AndersenWaveDiff::createAndersenWaveDiff(svfir);
+    pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     callGraph = pta->getCallGraph();
     callGraphSCC = pta->getCallGraphSCC();
 }

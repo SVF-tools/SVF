@@ -28,14 +28,14 @@
 //
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 AbsExtAPI::AbsExtAPI(AbstractInterpretation* ae): ae(ae)
 {
-    svfir = PAG::getPAG();
-    icfg = svfir->getICFG();
+    pag = PAG::getPAG();
+    icfg = pag->getICFG();
     initExtFunMap();
 }
 
@@ -257,7 +257,7 @@ void AbsExtAPI::collectCheckPoint()
     Set<std::string> buf_checkpoint_names = {"UNSAFE_BUFACCESS", "SAFE_BUFACCESS"};
     Set<std::string> nullptr_checkpoint_names = {"UNSAFE_LOAD", "SAFE_LOAD"};
 
-    for (auto it = svfir->getICFG()->begin(); it != svfir->getICFG()->end(); ++it)
+    for (auto it = pag->getICFG()->begin(); it != pag->getICFG()->end(); ++it)
     {
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
@@ -441,9 +441,9 @@ u32_t AbsExtAPI::getStringElementSize(const ValVar* var, const ICFGNode* node)
     for (auto addr : pointer.getAddrs())
     {
         const NodeID obj = getAbsState(node).getIDFromAddr(addr);
-        if (svfir->isNullOrBlkObj(obj))
+        if (pag->isNullOrBlkObj(obj))
             return 0;
-        const SVFType* type = svfir->getBaseObject(obj)->getType();
+        const SVFType* type = pag->getBaseObject(obj)->getType();
         while (const auto* array = SVFUtil::dyn_cast<SVFArrayType>(type))
             type = array->getTypeOfElement();
         if (!SVFUtil::isa<SVFIntegerType>(type) || !type->getByteSize() ||
@@ -492,13 +492,13 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
     for (const auto& addr : ptrVal.getAddrs())
     {
         const NodeID objId = as.getIDFromAddr(addr);
-        if (svfir->isNullOrBlkObj(objId))
+        if (pag->isNullOrBlkObj(objId))
         {
             result.join_with(unknown);
             continue;
         }
-        const BaseObjVar* base = svfir->getBaseObject(objId);
-        const auto* gep = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(objId));
+        const BaseObjVar* base = pag->getBaseObject(objId);
+        const auto* gep = SVFUtil::dyn_cast<GepObjVar>(pag->getSVFVar(objId));
         const APOffset start = gep ? gep->getConstantFieldIdx() : 0;
         u32_t lower = 0;
         bool nonzeroPrefix = true;
@@ -509,7 +509,7 @@ IntervalValue AbsExtAPI::getStrlen(const ValVar *strValue, const ICFGNode* node)
                     start + index >= base->getMaxFieldOffsetLimit() ||
                     start + index >= Options::MaxFieldLimit())
                 break;
-            const NodeID field = svfir->getGepObjVar(objId, index);
+            const NodeID field = pag->getGepObjVar(objId, index);
             const AbstractValue& cell = as.load(AbstractState::getVirtualMemAddress(field));
             if (cell.isInterval() && !cell.isAddr() && cell.getInterval().is_zero())
             {
@@ -606,16 +606,16 @@ void AbsExtAPI::handleStringCopy(const CallICFGNode* call,
         for (auto target : ae->getAbsValue(dst, call).getAddrs())
         {
             const NodeID obj = as.getIDFromAddr(target);
-            if (svfir->isNullOrBlkObj(obj))
+            if (pag->isNullOrBlkObj(obj))
                 continue;
-            const BaseObjVar* base = svfir->getBaseObject(obj);
-            const auto* gep = SVFUtil::dyn_cast<GepObjVar>(svfir->getSVFVar(obj));
+            const BaseObjVar* base = pag->getBaseObject(obj);
+            const auto* gep = SVFUtil::dyn_cast<GepObjVar>(pag->getSVFVar(obj));
             const APOffset offset = (gep ? gep->getConstantFieldIdx() : 0) + destination;
             // Do not wrap an out-of-object write back onto the prefix.
             if (offset < 0 || offset >= base->getNumOfElements() ||
                     offset >= base->getMaxFieldOffsetLimit() || offset >= Options::MaxFieldLimit())
                 continue;
-            const auto addr = AbstractState::getVirtualMemAddress(svfir->getGepObjVar(obj, destination));
+            const auto addr = AbstractState::getVirtualMemAddress(pag->getGepObjVar(obj, destination));
             AbstractValue stored = value;
             if (weak)
             {

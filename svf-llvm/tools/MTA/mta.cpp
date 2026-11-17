@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "MTA/MTA.h"
 #include "MTA/MTAStat.h"
 #include "Util/CommandLine.h"
@@ -38,7 +38,7 @@ namespace
 {
 
 AndersenWaveDiff* preparePreAnalysis(
-    SVFIR* pag, SVFIRBuilder& builder)
+    PAG* pag, PAGBuilder& builder)
 {
     ScopedPhaseTimer timer("Andersen's pointer analysis");
 
@@ -65,8 +65,8 @@ int main(int argc, char** argv)
             argc, argv, "MTA Analysis", "[options] <input-bitcode...>");
 
     LLVMModuleSet::buildSVFModule(moduleNameVec);
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build();
+    PAGBuilder builder;
+    PAG* pag = builder.build();
 
     // MTA's only client is race detection. -mta-flow-sensitive (default) selects the
     // FSAM pipeline (SlicedMTA), which decides slicing and the pre-analysis
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
     }
 
     AndersenWaveDiff::releaseAndersenWaveDiff();
-    SVFIR::releaseSVFIR();
+    PAG::releasePAG();
     LLVMModuleSet::releaseLLVMModuleSet();
     return succeeded ? 0 : 1;
 }

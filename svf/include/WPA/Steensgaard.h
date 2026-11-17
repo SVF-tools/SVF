@@ -15,7 +15,7 @@ namespace SVF
 {
 
 class ConstraintGraph;
-class SVFIR;
+class PAG;
 
 /*!
  * Equivalence-based Pointer Analysis
@@ -30,10 +30,10 @@ public:
     typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
 
     /// Constructor
-    Steensgaard(SVFIR* _pag) : AndersenBase(_pag, Steensgaard_WPA, true) {}
+    Steensgaard(PAG* _pag) : AndersenBase(_pag, Steensgaard_WPA, true) {}
 
     /// Create an singleton instance
-    static Steensgaard* createSteensgaard(SVFIR* _pag)
+    static Steensgaard* createSteensgaard(PAG* _pag)
     {
         if (steens == nullptr)
         {

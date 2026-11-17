@@ -32,7 +32,7 @@
 
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "AE/Svfexe/AEWTO.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "WPA/Andersen.h"
 #include "Util/Options.h"
 

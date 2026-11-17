@@ -66,7 +66,7 @@ public:
     typedef PersistentVersionedPTData<NodeID, NodeSet, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> PersVersionedPTDataTy;
 
     /// Constructor
-    BVDataPTAImpl(SVFIR* pag, PTATY type, bool alias_check = true);
+    BVDataPTAImpl(PAG* pag, PTATY type, bool alias_check = true);
 
     /// Destructor
     ~BVDataPTAImpl() override = default;
@@ -265,7 +265,7 @@ public:
     typedef Map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
-    CondPTAImpl(SVFIR* pag, PTATY type) : PointerAnalysis(pag, type), normalized(false)
+    CondPTAImpl(PAG* pag, PTATY type) : PointerAnalysis(pag, type), normalized(false)
     {
         if (type == PTATY::PathS_DDA || type == PTATY::Cxt_DDA)
             ptD = new MutPTDataTy();

@@ -39,7 +39,7 @@ namespace SVF
 
 class RelExeState
 {
-    friend class SVFIR2AbsState;
+    friend class PAG2AbsState;
 
 public:
     typedef Map<u32_t, Z3Expr> VarToValMap;

@@ -25,7 +25,7 @@
  //
  // Author: Jiawei Wang, Xiao Cheng, Jiawei Yang, Jiawei Ren, Yulei Sui
  */
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
@@ -887,9 +887,9 @@ int main(int argc, char** argv)
     }
 
     LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build();
-    // Run Andersen's to resolve indirect calls, then update SVFIR with resolved targets.
+    PAGBuilder builder;
+    PAG* pag = builder.build();
+    // Run Andersen's to resolve indirect calls, then update PAG with resolved targets.
     // The Andersen singleton will be reused inside AbstractInterpretation::runOnModule().
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     builder.updateCallGraph(ander->getCallGraph());

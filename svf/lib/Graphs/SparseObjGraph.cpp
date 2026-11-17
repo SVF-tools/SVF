@@ -28,7 +28,7 @@ std::string SparseObjNode::toString() const
 }
 
 SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
-                               PointerAnalysis& pta, const SVFIR& svfir) : icfg(graph)
+                               PointerAnalysis& pta, const PAG& pag) : icfg(graph)
 {
     //Step 1 collect key: All base Obj ID, value: all def-use sites related to the base id
     Map<NodeID, Set<const ICFGNode*>> eventsByBase;
@@ -53,9 +53,9 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
                     {
                         for (NodeID obj : call->getPointsTo())
                         {
-                            if (!svfir.isNullOrBlkObj(obj))
+                            if (!pag.isNullOrBlkObj(obj))
                             {
-                                const NodeID base = svfir.getBaseObject(obj)->getId();
+                                const NodeID base = pag.getBaseObject(obj)->getId();
                                 eventsByBase[base].insert(caller);
                                 eventsByBase[base].insert(location);
                                 addEdge(base, caller, location, nullptr);
@@ -72,9 +72,9 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
             {
                 for (NodeID obj : memory->getPointsTo())
                 {
-                    if (!svfir.isNullOrBlkObj(obj))
+                    if (!pag.isNullOrBlkObj(obj))
                     {
-                        const NodeID base = svfir.getBaseObject(obj)->getId();
+                        const NodeID base = pag.getBaseObject(obj)->getId();
                         eventsByBase[base].insert(location);
                         getOrCreateBaseObjNode(base, location);
                     }
@@ -92,9 +92,9 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
             {
                 for (NodeID obj : pta.getPts(pointer->getId()))
                 {
-                    if (!svfir.isNullOrBlkObj(obj))
+                    if (!pag.isNullOrBlkObj(obj))
                     {
-                        const NodeID base = svfir.getBaseObject(obj)->getId();
+                        const NodeID base = pag.getBaseObject(obj)->getId();
                         eventsByBase[base].insert(location);
                         getOrCreateBaseObjNode(base, location);
                     }
@@ -121,9 +121,9 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
                         {
                             for (NodeID obj : output->getPointsTo())
                             {
-                                if (!svfir.isNullOrBlkObj(obj))
+                                if (!pag.isNullOrBlkObj(obj))
                                 {
-                                    const NodeID base = svfir.getBaseObject(obj)->getId();
+                                    const NodeID base = pag.getBaseObject(obj)->getId();
                                     returnedGroups[ret].insert(base);
                                     if (source->getFun())
                                         returnedGroupsByCallee[ret][source->getFun()].insert(base);
@@ -151,7 +151,7 @@ SparseObjGraph::SparseObjGraph(const SVFG& svfg, ICFG& graph,
             sources.insert(icfg.getFunEntryICFGNode(event->getFun()));
 
         // Connect global objects from global initialization to function entries.
-        if (svfir.getBaseObject(base)->isGlobalObj())
+        if (pag.getBaseObject(base)->isGlobalObj())
         {
             const ICFGNode* global = icfg.getGlobalICFGNode();
             for (const ICFGEdge* edge : global->getOutEdges())

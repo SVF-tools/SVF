@@ -28,7 +28,7 @@
 
 #include "MTA/MTASlicer.h"
 #include "MTA/TCT.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/SVFUtil.h"
 #include "Util/CxtStmt.h"
 #include "Util/ThreadAPI.h"
@@ -37,8 +37,8 @@
 #include "Graphs/ICFGEdge.h"
 #include "Graphs/ICFGNode.h"
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFStatements.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFStatements.h"
+#include "SVFValues/SVFVariables.h"
 #include <queue>
 #include "Graphs/SVFG.h"
 #include "Graphs/VFGNode.h"
@@ -54,7 +54,7 @@ namespace SVF
 //===----------------------------------------------------------------------===//
 
 std::unique_ptr<SlicedTCT> SlicedTCT::create(
-    PointerAnalysis& pointerAnalysis, const SlicedSVFIRView& slicedView,
+    PointerAnalysis& pointerAnalysis, const SlicedUnifiedView& slicedView,
     u32_t contextLimit)
 {
     std::unique_ptr<SlicedTCT> tct(
@@ -64,7 +64,7 @@ std::unique_ptr<SlicedTCT> SlicedTCT::create(
 }
 
 SlicedTCT::SlicedTCT(PointerAnalysis& pointerAnalysis,
-                     const SlicedSVFIRView& slicedView, u32_t contextLimit)
+                     const SlicedUnifiedView& slicedView, u32_t contextLimit)
     : TCT(&pointerAnalysis, contextLimit),
       tcgView(*slicedView.getThreadCallGraph())
 {
@@ -297,9 +297,9 @@ void SlicedTCT::getKeptJoinSites(std::vector<const ICFGNode*>& out) const
 // MTASlicerBase
 //===----------------------------------------------------------------------===//
 
-MTASlicerBase::MTASlicerBase(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+MTASlicerBase::MTASlicerBase(PAG* pag, AndersenBase* pta, MHP* mhp,
                              LockAnalysis* lockAnalysis, SVFG* svfg)
-    : svfir(svfir), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis), svfg(svfg)
+    : pag(pag), pta(pta), mhp(mhp), lockAnalysis(lockAnalysis), svfg(svfg)
 {
     callGraph = pta->getCallGraph();
 }
@@ -434,7 +434,7 @@ OrderedSet<const SVFGNode*> MTASlicerBase::computeDataDependenceSVFGNodes(
         {
             // getDefSVFGNode takes a ValVar (the address pointer is a top-level
             // value variable).
-            const ValVar* ptrNode = SVFUtil::dyn_cast<ValVar>(svfir->getGNode(addrPtr));
+            const ValVar* ptrNode = SVFUtil::dyn_cast<ValVar>(pag->getGNode(addrPtr));
             if (ptrNode != nullptr && svfg->hasDefSVFGNode(ptrNode))
                 enqueueSVFGNode(svfg->getDefSVFGNode(ptrNode), visited, worklist);
         }
@@ -502,7 +502,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectPthreadStatements(
     }
 
     // Second pass: find corresponding pthread_join nodes
-    ICFG* icfg = svfir->getICFG();
+    ICFG* icfg = pag->getICFG();
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
             it != eit; ++it)
     {
@@ -560,7 +560,7 @@ OrderedSet<const CallICFGNode*> MTASlicerBase::collectMutexStatements(
     }
 
     // Second pass: find corresponding mutex_unlock nodes
-    ICFG* icfg = svfir->getICFG();
+    ICFG* icfg = pag->getICFG();
     for (ICFG::iterator it = icfg->begin(), eit = icfg->end();
             it != eit; ++it)
     {
@@ -725,7 +725,7 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
     }
 
     // For each keptFunction, add call/ret nodes and entry/exit nodes
-    ICFG* icfg = svfir->getICFG();
+    ICFG* icfg = pag->getICFG();
     OrderedSet<const ICFGNode*> expandedNodes = nodes;
     for (const FunObjVar* fun : keptFunctions)
     {
@@ -790,9 +790,9 @@ OrderedSet<const ICFGNode*> MTASlicerBase::expandCallDependence(
 // MultiStageSlicer
 //===----------------------------------------------------------------------===//
 
-MultiStageSlicer::MultiStageSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+MultiStageSlicer::MultiStageSlicer(PAG* pag, AndersenBase* pta, MHP* mhp,
                                    LockAnalysis* lockAnalysis, SVFG* svfg)
-    : MTASlicerBase(svfir, pta, mhp, lockAnalysis, svfg)
+    : MTASlicerBase(pag, pta, mhp, lockAnalysis, svfg)
 {
 }
 
@@ -889,9 +889,9 @@ ValueFlowSlice MultiStageSlicer::runPTASlicing(
 // SingleSlicer
 //===----------------------------------------------------------------------===//
 
-SingleSlicer::SingleSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+SingleSlicer::SingleSlicer(PAG* pag, AndersenBase* pta, MHP* mhp,
                            LockAnalysis* lockAnalysis, SVFG* svfg)
-    : MTASlicerBase(svfir, pta, mhp, lockAnalysis, svfg)
+    : MTASlicerBase(pag, pta, mhp, lockAnalysis, svfg)
 {
 }
 

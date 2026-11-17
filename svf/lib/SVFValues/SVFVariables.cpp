@@ -29,8 +29,8 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFVariables.h"
+#include "Graphs/PAG.h"
+#include "SVFValues/SVFVariables.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/CallGraph.h"
@@ -130,7 +130,7 @@ const std::string ValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -143,7 +143,7 @@ const std::string ObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -185,7 +185,7 @@ const std::string ArgValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ArgValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -204,7 +204,7 @@ const std::string GepValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GepValVar ID: " << getId() << " with offset_" + std::to_string(getConstantFieldIdx());
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << getBaseNode()->valueOnlyToString();
@@ -240,7 +240,7 @@ const std::string GepObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(apOffset);
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << getBaseObj()->valueOnlyToString();
@@ -250,12 +250,12 @@ const std::string GepObjVar::toString() const
 
 const SVFType *GepObjVar::getType() const
 {
-    return SVFIR::getPAG()->getFlatternedElemType(type, apOffset);
+    return PAG::getPAG()->getFlatternedElemType(type, apOffset);
 }
 
 bool BaseObjVar::isBlackHoleObj() const
 {
-    return IRGraph::isBlkObj(getId());
+    return PAGBase::isBlkObj(getId());
 }
 
 
@@ -270,7 +270,7 @@ const std::string BaseObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "BaseObjVar ID: " << getId() << " (base object)";
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -284,7 +284,7 @@ const std::string HeapObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "HeapObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -297,7 +297,7 @@ const std::string StackObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "StackObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -317,7 +317,7 @@ const std::string FunValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "FunValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << funObjVar->getFunction()->getName();
@@ -330,7 +330,7 @@ const std::string ConstDataValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstDataValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -343,7 +343,7 @@ const std::string GlobalValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -356,7 +356,7 @@ const std::string ConstFPValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstFPValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -369,7 +369,7 @@ const std::string ConstIntValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstIntValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -382,7 +382,7 @@ const std::string ConstNullPtrValVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstNullPtrValVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -395,7 +395,7 @@ const std::string GlobalObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "GlobalObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -407,7 +407,7 @@ const std::string ConstDataObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstDataObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -420,7 +420,7 @@ const std::string ConstFPObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstFPObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -433,7 +433,7 @@ const std::string ConstIntObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstIntObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -446,7 +446,7 @@ const std::string ConstNullPtrObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ConstNullPtrObjVar ID: " << getId();
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << valueOnlyToString();
@@ -493,7 +493,7 @@ const std::string FunObjVar::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "FunObjVar ID: " << getId() << " (base object)";
-    if (Options::ShowSVFIRValue())
+    if (Options::ShowPAGValue())
     {
         rawstr << "\n";
         rawstr << getName();

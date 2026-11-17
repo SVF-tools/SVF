@@ -37,7 +37,7 @@
 #include "Util/Options.h"
 #include "Graphs/BasicBlockG.h"
 #include "Graphs/ICFGNode.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 
 namespace SVF
 {
@@ -46,7 +46,7 @@ class ObjTypeInference;
 
 class LLVMModuleSet
 {
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class ICFGBuilder;
     friend class SymbolTableBuilder;
 
@@ -83,7 +83,7 @@ public:
 private:
     static LLVMModuleSet* llvmModuleSet;
     static bool preProcessed;
-    SVFIR* svfir;
+    PAG* pag;
     std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -221,7 +221,7 @@ public:
         return objSymMap;
     }
 
-    /// Get SVFIR Node according to LLVM value
+    /// Get PAG Node according to LLVM value
     ///getNode - Return the node corresponding to the specified pointer.
     NodeID getValueNode(const Value* V);
 

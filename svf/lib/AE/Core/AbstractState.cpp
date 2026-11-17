@@ -29,7 +29,7 @@
 
 #include <iomanip>
 #include "AE/Core/AbstractState.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 

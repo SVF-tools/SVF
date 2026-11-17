@@ -1,4 +1,4 @@
-//===- PAGBuilderFromFile.h -- Building SVFIR from File--------------------------------//
+//===- PAGBuilderFromFile.h -- Building PAG from File--------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -27,28 +27,28 @@
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_PAGBUILDERFROMFILE_H_
-#define INCLUDE_SVFIR_PAGBUILDERFROMFILE_H_
+#ifndef INCLUDE_PAG_PAGBUILDERFROMFILE_H_
+#define INCLUDE_PAG_PAGBUILDERFROMFILE_H_
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/GeneralType.h"
 
 namespace SVF
 {
 
 /*!
- * Build SVFIR from a user specified file (for debugging purpose)
+ * Build PAG from a user specified file (for debugging purpose)
  */
 class PAGBuilderFromFile
 {
 
 private:
-    SVFIR* pag;
+    PAG* pag;
     std::string file;
 public:
     /// Constructor
     PAGBuilderFromFile(std::string f) :
-        pag(SVFIR::getPAG(true)), file(f)
+        pag(PAG::getPAG(true)), file(f)
     {
     }
     /// Destructor
@@ -56,8 +56,8 @@ public:
     {
     }
 
-    /// Return SVFIR
-    SVFIR* getPAG() const
+    /// Return PAG
+    PAG* getPAG() const
     {
         return pag;
     }
@@ -69,7 +69,7 @@ public:
     }
 
     /// Start building
-    SVFIR* build();
+    PAG* build();
 
     // Add edges
     void addEdge(NodeID nodeSrc, NodeID nodeDst, APOffset offset,
@@ -78,4 +78,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVFIR_PAGBUILDERFROMFILE_H_ */
+#endif /* INCLUDE_PAG_PAGBUILDERFROMFILE_H_ */

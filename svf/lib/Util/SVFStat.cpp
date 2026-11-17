@@ -30,7 +30,7 @@
 #include <chrono>
 #include <iomanip>
 
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 #include "Util/SVFStat.h"
 #include "Graphs/CallGraph.h"
@@ -39,7 +39,7 @@ using namespace SVF;
 using namespace std;
 
 double SVFStat::timeOfBuildingLLVMModule = 0;
-double SVFStat::timeOfBuildingSVFIR = 0;
+double SVFStat::timeOfBuildingPAG = 0;
 double SVFStat::timeOfBuildingSymbolTable = 0;
 bool SVFStat::printGeneralStats = true;
 
@@ -71,7 +71,7 @@ double SVFStat::getClk(bool mark)
 void SVFStat::printStat(string statname)
 {
 
-    std::string moduleName(SVFIR::getPAG()->getModuleIdentifier());
+    std::string moduleName(PAG::getPAG()->getModuleIdentifier());
     std::vector<std::string> names = SVFUtil::split(moduleName,'/');
     if (names.size() > 1)
     {
@@ -118,7 +118,7 @@ void SVFStat::performStat()
     if(printGeneralStats == false)
         return;
 
-    SVFIR* pag = SVFIR::getPAG();
+    PAG* pag = PAG::getPAG();
     u32_t numOfFunction = 0;
     u32_t numOfGlobal = 0;
     u32_t numOfStack = 0;
@@ -132,7 +132,7 @@ void SVFStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<NodeID> memObjSet;
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
         if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(node))
@@ -212,7 +212,7 @@ void SVFStat::performStat()
 
     timeStatMap["LLVMIRTime"] = SVFStat::timeOfBuildingLLVMModule;
     timeStatMap["SymbolTableTime"] = SVFStat::timeOfBuildingSymbolTable;
-    timeStatMap["SVFIRTime"] = SVFStat::timeOfBuildingSVFIR;
+    timeStatMap["PAGTime"] = SVFStat::timeOfBuildingPAG;
 
     // REFACTOR-TODO bitcastInstStat();
     branchStat();
@@ -227,8 +227,7 @@ void SVFStat::branchStat()
 {
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const FunObjVar* func = item.second->getFunction();
         for (FunObjVar::const_bb_iterator bbIt = func->begin(), bbEit = func->end();

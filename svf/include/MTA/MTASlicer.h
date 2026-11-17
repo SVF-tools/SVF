@@ -29,9 +29,9 @@
 #ifndef MTA_MTASLICER_H
 #define MTA_MTASLICER_H
 
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFStatements.h"
-#include "SVFIR/SVFVariables.h"
+#include "Graphs/PAG.h"
+#include "SVFValues/SVFStatements.h"
+#include "SVFValues/SVFVariables.h"
 #include "WPA/Andersen.h"
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
@@ -83,10 +83,10 @@ class SlicedTCT : public TCT
 {
 public:
     /// @param pointerAnalysis the shared Andersen pre-analysis
-    /// @param slicedView SlicedSVFIRView containing a SlicedThreadCallGraphView
+    /// @param slicedView SlicedUnifiedView containing a SlicedThreadCallGraphView
     /// @param contextLimit maximum context length for the main analysis
     static std::unique_ptr<SlicedTCT> create(
-        PointerAnalysis& pointerAnalysis, const SlicedSVFIRView& slicedView,
+        PointerAnalysis& pointerAnalysis, const SlicedUnifiedView& slicedView,
         u32_t contextLimit);
 
     ~SlicedTCT() override = default;
@@ -100,7 +100,7 @@ protected:
 
 private:
     SlicedTCT(PointerAnalysis& pointerAnalysis,
-              const SlicedSVFIRView& slicedView, u32_t contextLimit);
+              const SlicedUnifiedView& slicedView, u32_t contextLimit);
 
     void collectEntryFunInCallGraph() override;
 
@@ -121,11 +121,11 @@ private:
 class MTASlicerBase
 {
 public:
-    MTASlicerBase(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+    MTASlicerBase(PAG* pag, AndersenBase* pta, MHP* mhp,
                   LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
 protected:
-    SVFIR* svfir;
+    PAG* pag;
     AndersenBase* pta;
     MHP* mhp;
     LockAnalysis* lockAnalysis;
@@ -201,7 +201,7 @@ protected:
 class MultiStageSlicer : public MTASlicerBase
 {
 public:
-    MultiStageSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+    MultiStageSlicer(PAG* pag, AndersenBase* pta, MHP* mhp,
                      LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
     /**
@@ -252,7 +252,7 @@ private:
 class SingleSlicer : public MTASlicerBase
 {
 public:
-    SingleSlicer(SVFIR* svfir, AndersenBase* pta, MHP* mhp,
+    SingleSlicer(PAG* pag, AndersenBase* pta, MHP* mhp,
                  LockAnalysis* lockAnalysis, SVFG* svfg = nullptr);
 
     /**

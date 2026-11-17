@@ -1,4 +1,4 @@
-//===- SVFIR.cpp -- Program assignment graph------------------------------------//
+//===- PAG.cpp -- Program assignment graph------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFIR.cpp
+ * PAG.cpp
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
@@ -29,7 +29,7 @@
 
 #include "Graphs/GraphPrinter.h"
 #include "Graphs/ICFG.h"
-#include "Graphs/IRGraph.h"
+#include "Graphs/PAGBase.h"
 #include "Util/GeneralType.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
@@ -37,7 +37,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-void IRGraph::destorySymTable()
+void PAGBase::destorySymTable()
 {
 
     for (auto &pair: objTypeInfoMap)
@@ -55,26 +55,26 @@ void IRGraph::destorySymTable()
     stInfos.clear();
 }
 
-IRGraph::~IRGraph()
+PAGBase::~PAGBase()
 {
     destorySymTable();
 }
 
 
-NodeID IRGraph::getReturnNode(const FunObjVar *func) const
+NodeID PAGBase::getReturnNode(const FunObjVar *func) const
 {
     FunObjVarToIDMapTy::const_iterator iter =  returnFunObjSymMap.find(func);
     assert(iter!=returnFunObjSymMap.end() && "ret sym not found");
     return iter->second;
 }
 
-NodeID IRGraph::getVarargNode(const FunObjVar *func) const
+NodeID PAGBase::getVarargNode(const FunObjVar *func) const
 {
     FunObjVarToIDMapTy::const_iterator iter =  varargFunObjSymMap.find(func);
     assert(iter!=varargFunObjSymMap.end() && "vararg sym not found");
     return iter->second;
 }
-void IRGraph::printFlattenFields(const SVFType *type)
+void PAGBase::printFlattenFields(const SVFType *type)
 {
     if (const SVFArrayType* at = SVFUtil::dyn_cast<SVFArrayType>(type))
     {
@@ -119,12 +119,12 @@ void IRGraph::printFlattenFields(const SVFType *type)
     }
 }
 
-const std::vector<const SVFType *> &IRGraph::getFlattenFieldTypes(const SVFStructType *T)
+const std::vector<const SVFType *> &PAGBase::getFlattenFieldTypes(const SVFStructType *T)
 {
     return getTypeInfo(T)->getFlattenFieldTypes();
 }
 
-const SVFType *IRGraph::getFlatternedElemType(const SVFType *baseType, u32_t flatten_idx)
+const SVFType *PAGBase::getFlatternedElemType(const SVFType *baseType, u32_t flatten_idx)
 {
     if(Options::ModelArrays())
     {
@@ -140,12 +140,12 @@ const SVFType *IRGraph::getFlatternedElemType(const SVFType *baseType, u32_t fla
     }
 }
 
-const SVFType *IRGraph::getOriginalElemType(const SVFType *baseType, u32_t origId) const
+const SVFType *PAGBase::getOriginalElemType(const SVFType *baseType, u32_t origId) const
 {
     return getTypeInfo(baseType)->getOriginalElemType(origId);
 }
 
-u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
+u32_t PAGBase::getFlattenedElemIdx(const SVFType *T, u32_t origId)
 {
     if(Options::ModelArrays())
     {
@@ -183,7 +183,7 @@ u32_t IRGraph::getFlattenedElemIdx(const SVFType *T, u32_t origId)
     }
 }
 
-u32_t IRGraph::getNumOfFlattenElements(const SVFType *T)
+u32_t PAGBase::getNumOfFlattenElements(const SVFType *T)
 {
     if(Options::ModelArrays())
         return getTypeInfo(T)->getNumOfFlattenElements();
@@ -191,7 +191,7 @@ u32_t IRGraph::getNumOfFlattenElements(const SVFType *T)
         return getTypeInfo(T)->getNumOfFlattenFields();
 }
 
-const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(NodeID symId, const SVFType *type)
+const ObjTypeInfo *PAGBase::createDummyObjTypeInfo(NodeID symId, const SVFType *type)
 {
     if (objTypeInfoMap.find(symId)==objTypeInfoMap.end())
     {
@@ -202,7 +202,7 @@ const ObjTypeInfo *IRGraph::createDummyObjTypeInfo(NodeID symId, const SVFType *
     return ti;
 }
 
-APOffset IRGraph::getModulusOffset(const BaseObjVar *baseObj, const APOffset &apOffset)
+APOffset PAGBase::getModulusOffset(const BaseObjVar *baseObj, const APOffset &apOffset)
 {
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
@@ -245,7 +245,7 @@ APOffset IRGraph::getModulusOffset(const BaseObjVar *baseObj, const APOffset &ap
     return offset;
 }
 
-ObjTypeInfo *IRGraph::createObjTypeInfo(const SVFType *type)
+ObjTypeInfo *PAGBase::createObjTypeInfo(const SVFType *type)
 {
 
     ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit());
@@ -256,18 +256,18 @@ ObjTypeInfo *IRGraph::createObjTypeInfo(const SVFType *type)
     return typeInfo;
 }
 
-const StInfo *IRGraph::getTypeInfo(const SVFType *T) const
+const StInfo *PAGBase::getTypeInfo(const SVFType *T) const
 {
     assert(T);
     SVFTypeSet::const_iterator it = svfTypes.find(T);
-    assert(it != svfTypes.end() && "type info not found? collect them first during SVFIR Building");
+    assert(it != svfTypes.end() && "type info not found? collect them first during PAG Building");
     return (*it)->getTypeInfo();
 }
 
 /*!
- * Add a SVFIR edge into edge map
+ * Add a PAG edge into edge map
  */
-bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
+bool PAGBase::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
 {
 
     DBOUT(DPAGBuild,
@@ -282,7 +282,7 @@ bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
 /*!
  * Return true if it is an intra-procedural edge
  */
-SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
+SVFStmt* PAGBase::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
 {
     SVFStmt edge(src,dst,kind, false);
     return hasEdge(&edge, kind);
@@ -291,7 +291,7 @@ SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK ki
 /*!
  * Return an MultiOpndStmt if found
  */
-SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2)
+SVFStmt* PAGBase::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2)
 {
     SVFStmt edge(src,op1,SVFStmt::makeEdgeFlagWithAddionalOpnd(kind,op2), false);
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
@@ -305,7 +305,7 @@ SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
 /*!
  * Return an inter-procedural edge if found
  */
-SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* callInst)
+SVFStmt* PAGBase::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* callInst)
 {
     SVFStmt edge(src,dst,SVFStmt::makeEdgeFlagWithCallInst(kind,callInst), false);
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(&edge);
@@ -316,7 +316,7 @@ SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
     return nullptr;
 }
 
-SVFStmt* IRGraph::hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind)
+SVFStmt* PAGBase::hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind)
 {
     SVFStmt::SVFStmtSetTy::iterator it = KindToSVFStmtSetMap[kind].find(edge);
     if (it != KindToSVFStmtSetMap[kind].end())
@@ -328,23 +328,23 @@ SVFStmt* IRGraph::hasEdge(SVFStmt* edge, SVFStmt::PEDGEK kind)
 
 
 /*!
- * Dump this IRGraph
+ * Dump this PAGBase
  */
-void IRGraph::dump(std::string name)
+void PAGBase::dump(std::string name)
 {
     GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
 /*!
- * View IRGraph
+ * View PAGBase
  */
-void IRGraph::view()
+void PAGBase::view()
 {
     SVF::ViewGraph(this, "ProgramAssignmentGraph");
 }
 
 
-u32_t IRGraph::getValueNodeNum()
+u32_t PAGBase::getValueNodeNum()
 {
     if (valVarNum != 0) return valVarNum;
     u32_t num = 0;
@@ -357,7 +357,7 @@ u32_t IRGraph::getValueNodeNum()
 }
 
 
-u32_t IRGraph::getObjectNodeNum()
+u32_t PAGBase::getObjectNodeNum()
 {
     if (objVarNum != 0) return objVarNum;
     u32_t num = 0;
@@ -377,7 +377,7 @@ namespace SVF
  * Write value flow graph into dot file for debugging
  */
 template<>
-struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
+struct DOTGraphTraits<PAGBase*> : public DefaultDOTGraphTraits
 {
 
     typedef SVFVar NodeType;
@@ -388,14 +388,14 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     }
 
     /// Return name of the graph
-    static std::string getGraphName(IRGraph *graph)
+    static std::string getGraphName(PAGBase *graph)
     {
         return graph->getGraphName();
     }
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
-    static bool isNodeHidden(SVFVar *node, IRGraph *)
+    static bool isNodeHidden(SVFVar *node, PAGBase *)
     {
         if (Options::ShowHiddenNode()) return false;
         else return node->isIsolatedNode();
@@ -403,7 +403,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(SVFVar *node, IRGraph*)
+    static std::string getNodeLabel(SVFVar *node, PAGBase*)
     {
         std::string str;
         std::stringstream rawstr(str);
@@ -417,7 +417,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
 
     }
 
-    static std::string getNodeAttributes(SVFVar *node, IRGraph*)
+    static std::string getNodeAttributes(SVFVar *node, PAGBase*)
     {
         if (SVFUtil::isa<ValVar>(node))
         {
@@ -455,7 +455,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(SVFVar*, EdgeIter EI, IRGraph*)
+    static std::string getEdgeAttributes(SVFVar*, EdgeIter EI, PAGBase*)
     {
         std::string str;
         std::stringstream rawstr(str);

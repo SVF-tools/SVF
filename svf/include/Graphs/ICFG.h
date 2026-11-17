@@ -34,7 +34,7 @@
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
 #include "MemoryModel/SVFLoop.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFVariables.h"
 
 namespace SVF
 {

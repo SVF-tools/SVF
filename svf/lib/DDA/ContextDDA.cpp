@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ContextDDA::ContextDDA(SVFIR* _pag,  DDAClient* client)
+ContextDDA::ContextDDA(PAG* _pag,  DDAClient* client)
     : CondPTAImpl<ContextCond>(_pag, PTATY::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
       _client(client)
 {

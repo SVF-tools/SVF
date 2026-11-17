@@ -33,7 +33,7 @@
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "MemoryModel/PointerAnalysis.h"
 
 #include <iostream>		/// std output
@@ -240,7 +240,7 @@ const ValVar* ThreadAPI::getActualParmAtForkSite(const CallICFGNode *inst) const
 const SVFVar* ThreadAPI::getFormalParmOfForkedFun(const FunObjVar* F) const
 {
     assert(PAG::getPAG()->hasFunArgsList(F) && "forked function has no args list!");
-    const SVFIR::ValVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
+    const PAG::ValVarList& funArgList = PAG::getPAG()->getFunArgsList(F);
     // in pthread, forked functions are of type void *()(void *args)
     assert(funArgList.size() == 1 && "num of pthread forked function args is not 1!");
     return funArgList[0];
@@ -355,8 +355,7 @@ void ThreadAPI::performAPIStat()
 
     statInit(tdAPIStatMap);
 
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         for (FunObjVar::const_bb_iterator bit = (item.second)->getFunction()->begin(), ebit = (item.second)->getFunction()->end(); bit != ebit; ++bit)
         {

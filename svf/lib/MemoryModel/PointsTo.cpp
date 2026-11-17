@@ -14,7 +14,7 @@
 
 #include "Util/Options.h"
 #include "MemoryModel/PointsTo.h"
-#include "SVFIR/SVFValue.h"
+#include "SVFValues/SVFValue.h"
 
 namespace SVF
 {

@@ -40,7 +40,7 @@ using namespace SVFUtil;
 /// Initialize analysis
 void SrcSnkDDA::initialize()
 {
-    SVFIR* pag = PAG::getPAG();
+    PAG* pag = PAG::getPAG();
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     memSSA.setSaberCondAllocator(getSaberCondAllocator());

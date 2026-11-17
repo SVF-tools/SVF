@@ -94,7 +94,7 @@ public:
     // Offline constraint graph (OfflineConsG.cpp)
     static const Option<bool> OCGDotGraph;
 
-    // Program Assignment Graph for pointer analysis (SVFIR.cpp)
+    // Program Assignment Graph for pointer analysis (PAG.cpp)
     static Option<bool> HandBlackHole;
     static const Option<bool> UndefAsNull;
     static const Option<bool> FirstFieldEqBase;
@@ -117,7 +117,7 @@ public:
     static const Option<bool> PStat;
     static const Option<u32_t> StatBudget;
     static const Option<bool> PAGDotGraph;
-    static const Option<bool> ShowSVFIRValue;
+    static const Option<bool> ShowPAGValue;
     static const Option<bool> DumpICFG;
     static const Option<std::string> DumpJson;
     static const Option<bool> ReadJson;
@@ -206,7 +206,7 @@ public:
     static const Option<std::string> ReadAnder;
     static const Option<bool> DiffPts;
     static Option<bool> DetectPWC;
-    static const Option<bool> VtableInSVFIR;
+    static const Option<bool> VtableInPAG;
 
     // WPAPass.cpp
     static const Option<std::string> ExtAPIPath;

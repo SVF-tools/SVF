@@ -36,7 +36,7 @@
 #include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/SlicedGraphs.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "WPA/Andersen.h"
 
 using namespace SVF;

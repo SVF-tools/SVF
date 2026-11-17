@@ -32,7 +32,7 @@
 #include "Graphs/DOTGraphTraits.h"
 #include "Util/SVFUtil.h"
 #include "Util/ThreadAPI.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include <cassert>
 #include <cstdlib>
 
@@ -548,7 +548,7 @@ void SlicedICFGView::getLocalSuccessors(
 // SlicedPAGView
 //===----------------------------------------------------------------------===//
 
-SlicedPAGView::SlicedPAGView(SVFIR* pag, const OrderedSet<const SVFStmt*>& keptStmts)
+SlicedPAGView::SlicedPAGView(PAG* pag, const OrderedSet<const SVFStmt*>& keptStmts)
     : pag(pag), keptStmts(keptStmts)
 {
     buildKeptNodeIds();
@@ -802,14 +802,14 @@ void SlicedThreadCallGraphView::dump(const std::string& filename) const
 }
 
 //===----------------------------------------------------------------------===//
-// SlicedSVFIRView
+// SlicedUnifiedView
 //===----------------------------------------------------------------------===//
 
-SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfir,
+SlicedUnifiedView::SlicedUnifiedView(PAG* pag,
                                  ThreadCallGraph& callGraph,
                                  ICFG* icfg,
                                  const OrderedSet<const ICFGNode*>& keepNodes)
-    : svfir(svfir)
+    : pag(pag)
 {
     // A retained function is represented by explicit synthetic entry/exit
     // nodes. Graph-generic MHP and lock propagation can therefore never seed or
@@ -839,7 +839,7 @@ SlicedSVFIRView::SlicedSVFIRView(SVFIR* svfir,
                    icfg, extendedKeepNodes);
 }
 
-void SlicedSVFIRView::ensurePAGView() const
+void SlicedUnifiedView::ensurePAGView() const
 {
     if (pagView != nullptr)
         return;
@@ -852,19 +852,19 @@ void SlicedSVFIRView::ensurePAGView() const
         const ICFGNode::SVFStmtList& stmts = node->getSVFStmts();
         keptStmts.insert(stmts.begin(), stmts.end());
     }
-    pagView = std::make_unique<SlicedPAGView>(svfir, keptStmts);
+    pagView = std::make_unique<SlicedPAGView>(pag, keptStmts);
 }
 
-void SlicedSVFIRView::dumpAll(const std::string& prefix) const
+void SlicedUnifiedView::dumpAll(const std::string& prefix) const
 {
     icfgView->dump(prefix + "_icfg");
     tcgView->dump(prefix + "_threadcallgraph");
     getPAG()->dump(prefix + "_pag");
 }
 
-void SlicedSVFIRView::dumpStats(const std::string& prefix) const
+void SlicedUnifiedView::dumpStats(const std::string& prefix) const
 {
-    std::string label = prefix.empty() ? "[SlicedSVFIRView]" : "[" + prefix + "]";
+    std::string label = prefix.empty() ? "[SlicedUnifiedView]" : "[" + prefix + "]";
     SVFUtil::outs() << label << " Statistics:\n";
     SVFUtil::outs() << "  ICFG nodes: " << icfgView->getKeptNodes().size() << "\n";
     SVFUtil::outs() << "  Functions: " << getKeptFunctions().size() << "\n";

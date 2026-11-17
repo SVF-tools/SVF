@@ -43,7 +43,7 @@ void ConstraintGraph::buildCG()
 {
 
     // initialize nodes
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         addConstraintNode(new ConstraintNode(it->first), it->first);
     }
@@ -192,9 +192,9 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id)
 {
     // Retarget addr edges may lead s to be a dummy node
-    const SVFVar* node = SVFIR::getPAG()->getSVFVar(s->getId());
+    const SVFVar* node = PAG::getPAG()->getSVFVar(s->getId());
     (void)node; // Suppress warning of unused variable under release build
-    if (!SVFIR::pagReadFromTXT())
+    if (!PAG::pagReadFromTXT())
     {
         assert(!SVFUtil::isa<DummyValVar>(node) && "a dummy node??");
     }
@@ -734,7 +734,7 @@ ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
 
 const std::string ConstraintNode::toString() const
 {
-    return SVFIR::getPAG()->getSVFVar(getId())->toString();
+    return PAG::getPAG()->getSVFVar(getId())->toString();
 }
 
 /*!
@@ -743,12 +743,12 @@ const std::string ConstraintNode::toString() const
 namespace SVF
 {
 template<>
-struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
+struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
 {
 
     typedef ConstraintNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVFIR*>(isSimple)
+        DOTGraphTraits<PAG*>(isSimple)
     {
     }
 
@@ -768,7 +768,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
-        const SVFVar* node = SVFIR::getPAG()->getSVFVar(n->getId());
+        const SVFVar* node = PAG::getPAG()->getSVFVar(n->getId());
         bool briefDisplay = Options::BriefConsCGDotGraph();
         bool nameDisplay = true;
         std::string str;
@@ -801,7 +801,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
 
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
-        const SVFVar* node = SVFIR::getPAG()->getSVFVar(n->getId());
+        const SVFVar* node = PAG::getPAG()->getSVFVar(n->getId());
         if (SVFUtil::isa<ValVar>(node))
         {
             if(SVFUtil::isa<GepValVar>(node))

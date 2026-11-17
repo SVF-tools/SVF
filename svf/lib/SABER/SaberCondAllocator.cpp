@@ -34,7 +34,7 @@
 #include "Graphs/SVFG.h"
 #include <climits>
 #include <cmath>
-#include "SVFIR/SVFStatements.h"
+#include "SVFValues/SVFStatements.h"
 #include "Graphs/CallGraph.h"
 
 using namespace SVF;
@@ -60,8 +60,7 @@ void SaberCondAllocator::allocate()
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const FunObjVar *func = (item.second)->getFunction();
         if (!SVFUtil::isExtCall(func))

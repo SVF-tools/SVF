@@ -35,7 +35,7 @@
 #define MEMORYREGION_H_
 
 #include "Graphs/SCC.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/WorkList.h"
 
 #include <set>
@@ -176,8 +176,8 @@ public:
 
     typedef Map<NodeID, NodeBS> NodeToPTSSMap;
 
-    /// SVFIR edge list
-    typedef SVFIR::SVFStmtList SVFStmtList;
+    /// PAG edge list
+    typedef PAG::SVFStmtList SVFStmtList;
     /// Call Graph SCC
     typedef SCCDetection<CallGraph*> SCC;
 
@@ -205,17 +205,17 @@ private:
 
     /// Map a function to all its memory regions
     FunToMRsMap funToMRsMap;
-    /// Map a load SVFIR Edge to its memory regions sets in order for inserting mus in Memory SSA
+    /// Map a load PAG Edge to its memory regions sets in order for inserting mus in Memory SSA
     LoadsToMRsMap loadsToMRsMap;
-    /// Map a store SVFIR Edge to its memory regions sets in order for inserting chis in Memory SSA
+    /// Map a store PAG Edge to its memory regions sets in order for inserting chis in Memory SSA
     StoresToMRsMap storesToMRsMap;
     /// Map a callsite to its refs regions
     CallSiteToMRsMap callsiteToRefMRsMap;
     /// Map a callsite to its mods regions
     CallSiteToMRsMap callsiteToModMRsMap;
-    /// Map a load SVFIR Edge to its CPts set map
+    /// Map a load PAG Edge to its CPts set map
     LoadsToPointsToMap loadsToPointsToMap;
-    /// Map a store SVFIR Edge to its CPts set map
+    /// Map a store PAG Edge to its CPts set map
     StoresToPointsToMap	storesToPointsToMap;
     /// Map a callsite to it refs cpts set
     CallSiteToPointsToMap callsiteToRefPointsToMap;
@@ -243,7 +243,7 @@ private:
     /// Map a pointer to its cached points-to chain;
     NodeToPTSSMap cachedPtsChainMap;
 
-    /// All global variable SVFIR node ids
+    /// All global variable PAG node ids
     NodeBS allGlobals;
 
     /// Clean up memory
@@ -450,11 +450,11 @@ public:
     /// Start generating memory regions
     virtual void generateMRs();
 
-    /// Get the function which SVFIR Edge located
+    /// Get the function which PAG Edge located
     const FunObjVar* getFunction(const PAGEdge* pagEdge) const
     {
         PAGEdgeToFunMap::const_iterator it = pagEdgeToFunMap.find(pagEdge);
-        assert(it!=pagEdgeToFunMap.end() && "can not find its function, it is a global SVFIR edge");
+        assert(it!=pagEdgeToFunMap.end() && "can not find its function, it is a global PAG edge");
         return it->second;
     }
     /// Get Memory Region set
@@ -488,7 +488,7 @@ public:
         return callsiteToModMRsMap[cs];
     }
     //@}
-    /// Whether this instruction has SVFIR Edge
+    /// Whether this instruction has PAG Edge
     bool hasSVFStmtList(const ICFGNode* icfgNode);
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
     SVFStmtList& getSVFStmtsFromInst(const ICFGNode* node);

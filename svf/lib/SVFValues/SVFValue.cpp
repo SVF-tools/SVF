@@ -29,7 +29,7 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
-#include "SVFIR/SVFValue.h"
+#include "SVFValues/SVFValue.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/BasicBlockG.h"
 #include "Graphs/GenericGraph.h"

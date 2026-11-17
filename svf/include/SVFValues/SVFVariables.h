@@ -29,13 +29,13 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_SVFVARIABLE_H_
-#define INCLUDE_SVFIR_SVFVARIABLE_H_
+#ifndef INCLUDE_PAG_SVFVARIABLE_H_
+#define INCLUDE_PAG_SVFVARIABLE_H_
 
 #include "Graphs/BasicBlockG.h"
 #include "Graphs/GenericGraph.h"
-#include "SVFIR/ObjTypeInfo.h"
-#include "SVFIR/SVFStatements.h"
+#include "SVFValues/ObjTypeInfo.h"
+#include "SVFValues/SVFStatements.h"
 #include "Util/GeneralType.h"
 #include "Util/SVFLoopAndDomInfo.h"
 #include "Util/SVFUtil.h"
@@ -47,21 +47,21 @@ class FunObjVar;
 class SVFVar;
 
 /*
- * Program variables in SVFIR (based on PAG nodes)
+ * Program variables in PAG (based on PAG nodes)
  * These represent variables in the program analysis graph
  */
 typedef GenericNode<SVFVar, SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
 
-    friend class SVFIRBuilder;
-    friend class IRGraph;
-    friend class SVFIR;
+    friend class PAGBuilder;
+    friend class PAGBase;
+    friend class PAG;
     friend class VFG;
     friend class GraphDBClient;
 
 public:
-    /// Node kinds for SVFIR variables:
+    /// Node kinds for PAG variables:
     /// ValNode - LLVM pointer value
     /// ObjNode - Memory object
     /// RetValNode - Function return value
@@ -110,7 +110,7 @@ public:
         return false;
     }
 
-    /// Check if this node is isolated (no edges) in the SVFIR graph
+    /// Check if this node is isolated (no edges) in the PAG graph
     virtual bool isIsolatedNode() const;
 
     /// Get string name of the represented LLVM value
@@ -357,7 +357,7 @@ public:
 
 
 /**
- * @brief Class representing a function argument variable in the SVFIR
+ * @brief Class representing a function argument variable in the PAG
  *
  * This class models function argument in the program analysis. It extends ValVar
  * to specifically handle function argument.
@@ -556,7 +556,7 @@ public:
  */
 class BaseObjVar : public ObjVar
 {
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class GraphDBClient;
 
 private:
@@ -861,7 +861,7 @@ public:
 
 
 /**
- * @brief Class representing a heap object variable in the SVFIR
+ * @brief Class representing a heap object variable in the PAG
  *
  * This class models heap-allocated objects in the program analysis. It extends BaseObjVar
  * to specifically handle heap memory locations.
@@ -917,7 +917,7 @@ public:
 
 
 /**
- * @brief Represents a stack-allocated object variable in the SVFIR (SVF Intermediate Representation)
+ * @brief Represents a stack-allocated object variable in the PAG (SVF Intermediate Representation)
  * @inherits BaseObjVar
  *
  * This class models variables that are allocated on the stack in the program.
@@ -979,7 +979,7 @@ class CallGraphNode;
 
 class FunObjVar : public BaseObjVar
 {
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class LLVMModuleSet;
     friend class GraphDBClient;
 
@@ -2221,4 +2221,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVFIR_SVFVARIABLE_H_ */
+#endif /* INCLUDE_PAG_SVFVARIABLE_H_ */
