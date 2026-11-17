@@ -1,4 +1,4 @@
-//===- PAG.h -- IR of SVF ---------------------------------------------//
+//===- PAG.h -- Program Assignment Graph -------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
