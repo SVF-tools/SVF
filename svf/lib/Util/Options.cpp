@@ -812,10 +812,6 @@ const OptionMap<u32_t> Options::AEFunEntry(
 });
 const Option<u32_t> Options::WidenDelay(
     "widen-delay", "Loop Widen Delay", 3);
-const Option<bool> Options::AEReuseUnchangedState(
-    "ae-reuse-unchanged-state",
-    "AE: skip a top-level WTO component (node or cycle) whose input is contained in the one it last ran with",
-    true);
 const OptionMap<u32_t> Options::HandleRecur(
     "handle-recur",
     "Recursion handling mode in abstract execution (Default -widen-narrow)",

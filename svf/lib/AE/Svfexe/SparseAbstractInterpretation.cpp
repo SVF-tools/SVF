@@ -212,10 +212,8 @@ bool SemiSparseAbstractInterpretation::mergeStatesFromPredecessors(
     if (!AbstractInterpretation::mergeStatesFromPredecessors(node))
         return false;
     // ValVars are not carried along the ICFG and are read at their def-sites;
-    // with -ae-reuse-unchanged-state, copy node's reads into its state so the
-    // state is its whole input.
-    if (Options::AEReuseUnchangedState())
-        mergeSparseValVarsFromPredecessors(node, abstractTrace[node]);
+    // copy node's reads into its state so the state is its whole input.
+    mergeSparseValVarsFromPredecessors(node, abstractTrace[node]);
     return true;
 }
 

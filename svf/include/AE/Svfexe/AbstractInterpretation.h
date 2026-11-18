@@ -382,8 +382,8 @@ protected:
     PAG* pag{nullptr};
     AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
-    /// With -ae-reuse-unchanged-state, the input of each top-level WTO
-    /// component (a node, or a cycle) when it last ran, keyed by its head.
+    /// The input of each top-level WTO component (a node, or a cycle) when
+    /// it last ran, keyed by its head.
     Map<const ICFGNode*, AbstractState> preStates;
 
     /// Whether comp's input now (its head merged again from its predecessors,
