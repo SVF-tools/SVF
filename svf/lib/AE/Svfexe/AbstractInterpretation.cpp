@@ -803,10 +803,11 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     while (!worklist.empty())
     {
         const ICFGWTOComp* comp = worklist.pop();
-        // With -ae-reuse, a top-level component (a node, or a whole cycle) is
-        // skipped when its input is contained in the one it last ran with:
+        // With -ae-reuse-unchanged-state, a top-level component (a node, or a
+        // whole cycle) is skipped when its input is contained in the one it
+        // last ran with:
         // abstractTrace holds results for that input, which cover this one.
-        if (!Options::AEReuse() || !isCoveredByPreState(comp))
+        if (!Options::AEReuseUnchangedState() || !isCoveredByPreState(comp))
             handleWTOComponent(comp, caller);
     }
 }

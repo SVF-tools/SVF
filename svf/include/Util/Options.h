@@ -239,7 +239,7 @@ public:
     static const OptionMap<u32_t> AEFunEntry;
     static const Option<u32_t> WidenDelay;
     /// Full-sparse AE: skip a WTO component (node or cycle) whose inputs are unchanged
-    static const Option<bool> AEReuse;
+    static const Option<bool> AEReuseUnchangedState;
     /// recursion handling mode, Default: TOP
     static const OptionMap<u32_t> HandleRecur;
     /// the max time consumptions (seconds). Default: 4 hours 14400s
