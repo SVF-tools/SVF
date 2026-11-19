@@ -897,27 +897,16 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
-        BoundedInt lb = 0;
-        // If the shift is greater than 32, the result is always 0
-        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity())
-        {
-            lb = IntervalValue::minus_infinity();
-        }
-        else
-        {
-            lb = (1 << (s32_t) shift.lb().getNumeral());
-        }
-        BoundedInt ub = 0;
-        if (shift.ub().is_infinity())
-        {
-            ub = IntervalValue::plus_infinity();
-        }
-        else
-        {
-            ub = (1 << (s32_t) shift.ub().getNumeral());
-        }
-        IntervalValue coeff(lb, ub);
-        return lhs * coeff;
+        // Zero stays zero for any admitted shift, even an unbounded one.
+        if (lhs.equals(IntervalValue(0)))
+            return lhs;
+        // 1 << 31 overflows a signed 32-bit coefficient and may create an
+        // invalid interval whose lower bound is greater than its upper bound.
+        if (shift.ub().is_infinity() || shift.ub().getIntNumeral() >= 31)
+            return IntervalValue::top();
+        const s32_t low = static_cast<s32_t>(shift.lb().getIntNumeral());
+        const s32_t high = static_cast<s32_t>(shift.ub().getIntNumeral());
+        return lhs * IntervalValue(s64_t(1) << low, s64_t(1) << high);
     }
 }
 

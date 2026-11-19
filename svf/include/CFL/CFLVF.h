@@ -39,13 +39,13 @@
 namespace SVF
 {
 
-class SVFIR;
+class PAG;
 
 class CFLVF : public CFLBase
 {
 
 public:
-    CFLVF(SVFIR* ir) : CFLBase(ir, PTATY::CFLFSCS_WPA)
+    CFLVF(PAG* pag) : CFLBase(pag, PTATY::CFLFSCS_WPA)
     {
     }
 

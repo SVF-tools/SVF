@@ -28,26 +28,36 @@ SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
 
-MajorLLVMVer=21
-LLVMVer=${MajorLLVMVer}.1.0
+MajorLLVMVer=22
+MinorLLVMVer=1
+PatchLLVMVer=0
+LLVMVer="${MajorLLVMVer}.${MinorLLVMVer}.${PatchLLVMVer}"
 LLVM_SDK_TAG="llvm_${MajorLLVMVer}"
 Z3Ver=4.15.4
+
+# MSYS2 Clang64 LLVM package revision for Windows MinGW
+# Pkg format: mingw-w64-clang-x86_64-*-${MajorLLVMVer}.${MinorLLVMVer}.${MSYS2_LLVM_PATCH}-${MSYS2_LLVM_BUILD}-any.pkg.tar.zst
+MSYS2_LLVM_PATCH="8"
+MSYS2_LLVM_BUILD="3"
+MSYS2_PKG_SUFFIX="${MajorLLVMVer}.${MinorLLVMVer}.${MSYS2_LLVM_PATCH}-${MSYS2_LLVM_BUILD}-any"
 
 # Keep LLVM version suffix for version checking and better debugging.
 # Keep this consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile.
 LLVMHome="llvm-${LLVMVer}.obj"
 Z3Home="z3.obj"
 
-UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/llvm-${LLVMVer}-ubuntu22-rtti-aarch64.tar.gz"
+UbuntuArmLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/llvm-${LLVMVer}-ubuntu26-rtti-aarch64.tar.gz"
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-ARM64.tar.xz"
-UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/llvm-${LLVMVer}-ubuntu22-rtti-x86-64.tar.gz"
+UbuntuLLVM_RTTI="https://github.com/SVF-tools/SVF/releases/download/SVF-3.3/llvm-${LLVMVer}-ubuntu26-rtti-x86-64.tar.gz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/LLVM-${LLVMVer}-Linux-X64.tar.xz"
+WindowsLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 
 Z3PrebuiltBase="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs"
 UbuntuZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x86_64-ubuntu-22.04.zip"
 UbuntuZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-ubuntu-22.04.zip"
 MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
+WindowsZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
@@ -59,14 +69,15 @@ urlZ3=""
 
 usage() {
     cat <<USAGE
-Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [nortti]
+Usage: ./build.sh [debug|minsize] [dyn_lib|sta_lib] [rtti|nortti]
 
 Options:
   debug      Build Debug instead of Release.
   minsize    Build MinSizeRel to reduce binary size.
   dyn_lib    Build shared libraries. This is the default.
   sta_lib    Build static libraries.
-  nortti     Disable LLVM RTTI. Valid only for static-library builds.
+  rtti       Enable LLVM RTTI (downloads custom RTTI builds if available). This is the default.
+  nortti     Disable LLVM RTTI (uses official upstream LLVM releases).
 
 Environment variables:
   LLVM_DIR           Use an existing LLVM installation.
@@ -95,6 +106,9 @@ parse_args() {
             [Nn]ortti)
                 RTTI="OFF"
                 ;;
+            [Rr]tti)
+                RTTI="ON"
+                ;;
             -h|--help|[Hh]elp)
                 usage
                 exit 0
@@ -113,12 +127,6 @@ normalise_options() {
             echo "Notice: Windows builds require static libraries. Forcing BUILD_DYN_LIB=OFF (sta_lib)."
             BUILD_DYN_LIB="OFF"
         fi
-    fi
-
-    # Shared-library builds require RTTI in the current SVF/LLVM setup.
-    if [[ "$BUILD_DYN_LIB" == "ON" && "$RTTI" == "OFF" ]]; then
-        echo "Warning: LLVM RTTI is always on when building shared libraries. Ignoring 'nortti'."
-        RTTI="ON"
     fi
 }
 
@@ -157,9 +165,13 @@ detect_platform() {
 
 select_dependency_urls() {
     case "$PLATFORM" in
-        windows-msvc|windows-mingw)
-            urlLLVM="https://github.com/c3lang/llvm-for-c3/releases/download/${LLVM_SDK_TAG}/llvm-windows-amd64.tar.gz"
-            urlZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+        windows-msvc)
+            urlLLVM="$WindowsLLVM"
+            urlZ3="$WindowsZ3"
+            ;;
+        windows-mingw)
+            urlLLVM=""
+            urlZ3="$WindowsZ3"
             ;;
         ubuntu-x86_64)
             if [[ "$RTTI" == "ON" ]]; then
@@ -303,11 +315,7 @@ download_llvm_prebuilt() {
 
     echo "Unpacking LLVM package..."
     mkdir -p "./$LLVMHome"
-    if [[ "$PLATFORM" == windows-* ]]; then
-        tar -xf "$llvm_archive" -C "./$LLVMHome"
-    else
-        tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
-    fi
+    tar -xf "$llvm_archive" -C "./$LLVMHome" --strip-components 1
     rm "$llvm_archive"
 
     # For Windows MSVC LLVM SDK, strip hardcoded diaguids.lib path from LLVMExports.cmake
@@ -359,7 +367,7 @@ ensure_llvm() {
         if command -v pacman >/dev/null 2>&1; then
             echo "Installing LLVM ${MajorLLVMVer} packages for MinGW in MSYS2..."
             local msys_mirror="https://mirror.msys2.org/mingw/clang64"
-            local pkg_suffix="${MajorLLVMVer}.1.8-4-any"
+            local pkg_suffix="${MSYS2_PKG_SUFFIX}"
             pacman -U --noconfirm --needed \
                 "${msys_mirror}/mingw-w64-clang-x86_64-llvm-libs-${pkg_suffix}.pkg.tar.zst" \
                 "${msys_mirror}/mingw-w64-clang-x86_64-llvm-tools-${pkg_suffix}.pkg.tar.zst" \
@@ -504,7 +512,13 @@ ensure_z3() {
 
 configure_runtime_env() {
     export PATH="$LLVM_DIR/bin:$Z3_DIR/bin:$PATH"
-    export LD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
+    local llvm_lib_dirs="$LLVM_DIR/lib"
+    if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+        llvm_lib_dirs="$LLVM_DIR/lib/x86_64-unknown-linux-gnu:$llvm_lib_dirs"
+    elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+        llvm_lib_dirs="$LLVM_DIR/lib/aarch64-unknown-linux-gnu:$llvm_lib_dirs"
+    fi
+    export LD_LIBRARY_PATH="$llvm_lib_dirs:$Z3_DIR/bin:${LD_LIBRARY_PATH:-}"
     export DYLD_LIBRARY_PATH="$LLVM_DIR/lib:$Z3_DIR/bin:${DYLD_LIBRARY_PATH:-}"
 
     echo "LLVM_DIR=$LLVM_DIR"
@@ -551,6 +565,57 @@ build_svf() {
             -DSVF_EXPORT_DYNAMIC=OFF
             -DSVF_Z3=ON
         )
+    elif [[ "$PLATFORM" == ubuntu-* ]]; then
+        if [[ "$RTTI" == "OFF" ]]; then
+            local c_comp="${CC:-}"
+            local cxx_comp="${CXX:-}"
+            if [[ -z "$c_comp" && -x "$LLVM_DIR/bin/clang" && -x "$LLVM_DIR/bin/clang++" ]]; then
+                if "$LLVM_DIR/bin/clang" --version >/dev/null 2>&1; then
+                    c_comp="$LLVM_DIR/bin/clang"
+                    cxx_comp="$LLVM_DIR/bin/clang++"
+                fi
+            fi
+            if [[ -n "$c_comp" && -n "$cxx_comp" ]]; then
+                cmake_generator_args+=(
+                    -DCMAKE_C_COMPILER="$c_comp"
+                    -DCMAKE_CXX_COMPILER="$cxx_comp"
+                )
+            fi
+            local extra_link_flags=""
+            if [[ -x "$LLVM_DIR/bin/ld.lld" ]]; then
+                if ! "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
+                    for lxml in /usr/lib/*/libxml2.so* /usr/lib/libxml2.so*; do
+                        if [[ -f "$lxml" ]]; then
+                            local lxml_dir
+                            lxml_dir=$(dirname "$lxml")
+                            if [[ ! -f "$lxml_dir/libxml2.so.2" && -w "$lxml_dir" ]]; then
+                                ln -sf "$lxml" "$lxml_dir/libxml2.so.2" 2>/dev/null || true
+                            fi
+                            break
+                        fi
+                    done
+                fi
+                if "$LLVM_DIR/bin/ld.lld" --version >/dev/null 2>&1; then
+                    extra_link_flags="${extra_link_flags:+$extra_link_flags }-fuse-ld=lld"
+                    cmake_generator_args+=(-DSVF_USE_LLD=ON)
+                fi
+            fi
+            local target_lib_dir=""
+            if [[ -d "$LLVM_DIR/lib/x86_64-unknown-linux-gnu" ]]; then
+                target_lib_dir="$LLVM_DIR/lib/x86_64-unknown-linux-gnu"
+            elif [[ -d "$LLVM_DIR/lib/aarch64-unknown-linux-gnu" ]]; then
+                target_lib_dir="$LLVM_DIR/lib/aarch64-unknown-linux-gnu"
+            fi
+            if [[ -n "$target_lib_dir" ]]; then
+                extra_link_flags="${extra_link_flags} -L$target_lib_dir -Wl,-rpath,$target_lib_dir"
+            fi
+            if [[ -n "$extra_link_flags" ]]; then
+                cmake_generator_args+=(
+                    "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_flags}"
+                    "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_flags}"
+                )
+            fi
+        fi
     fi
 
     rm -rf "$build_dir"
@@ -558,7 +623,7 @@ build_svf() {
 
     cmake -D CMAKE_BUILD_TYPE:STRING="$BUILD_TYPE"  \
         -DSVF_ENABLE_ASSERTIONS:BOOL="$ENABLE_ASSERTIONS" \
-        -DSVF_ENABLE_RTTI:BOOL="$RTTI" \
+        -DSVF_ENABLE_RTTI:BOOL="ON" \
         ${SVF_SANITIZER:+-DSVF_SANITIZE="$SVF_SANITIZER"} \
         ${SVF_COVERAGE:+-DSVF_COVERAGE=ON}           \
         ${SVF_DEBUG_INFO:+-DSVF_DEBUG_INFO=ON}       \

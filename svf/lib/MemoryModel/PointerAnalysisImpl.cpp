@@ -45,7 +45,7 @@ using namespace std;
 /*!
  * Constructor
  */
-BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PTATY type, bool alias_check) :
+BVDataPTAImpl::BVDataPTAImpl(PAG* p, PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check), ptCache()
 {
     if (type == PTATY::Andersen_BASE || type == PTATY::Andersen_WPA || type == PTATY::AndersenWaveDiff_WPA
@@ -226,10 +226,10 @@ void BVDataPTAImpl::writePtsResultToFile(std::fstream& f)
 void BVDataPTAImpl::writeGepObjVarMapToFile(std::fstream& f)
 {
     //write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
-    SVFIR::OffsetToGepVarMap &gepObjVarMap = pag->getGepObjNodeMap();
-    for(SVFIR::OffsetToGepVarMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
+    PAG::OffsetToGepVarMap &gepObjVarMap = pag->getGepObjNodeMap();
+    for(PAG::OffsetToGepVarMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
     {
-        const SVFIR::GepOffset offsetPair = it -> first;
+        const PAG::GepOffset offsetPair = it -> first;
         //write the base id to file
         f << offsetPair.first << " ";
         //write the offset to file
@@ -242,7 +242,7 @@ void BVDataPTAImpl::writeGepObjVarMapToFile(std::fstream& f)
 
 /*!
  * Store pointer analysis result into a file.
- * It includes the points-to relations, and all SVFIR nodes including those
+ * It includes the points-to relations, and all PAG nodes including those
  * created when solving Andersen's constraints.
  */
 void BVDataPTAImpl::writeToFile(const string& filename)
@@ -346,7 +346,7 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
 {
     string line;
     //read GepObjVarMap from file
-    SVFIR::OffsetToGepVarMap gepObjVarMap = pag->getGepObjNodeMap();
+    PAG::OffsetToGepVarMap gepObjVarMap = pag->getGepObjNodeMap();
     while (F.good())
     {
         getline(F, line);
@@ -357,7 +357,7 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
         size_t offset;
         NodeID id;
         ss >> base >> offset >>id;
-        SVFIR::OffsetToGepVarMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
+        PAG::OffsetToGepVarMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
         if (iter == gepObjVarMap.end())
         {
             const SVFVar* node = pag->getSVFVar(base);
@@ -407,8 +407,8 @@ void BVDataPTAImpl::readAndSetObjFieldSensitivity(std::ifstream& F, const std::s
 
 /*!
  * Load pointer analysis result form a file.
- * It populates BVDataPTAImpl with the points-to data, and updates SVFIR with
- * the SVFIR offset nodes created during Andersen's solving stage.
+ * It populates BVDataPTAImpl with the points-to data, and updates PAG with
+ * the PAG offset nodes created during Andersen's solving stage.
  */
 bool BVDataPTAImpl::readFromFile(const string& filename)
 {
@@ -479,7 +479,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
 void BVDataPTAImpl::dumpAllPts()
 {
     OrderedNodeSet pagNodes;
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         pagNodes.insert(it->first);
     }
@@ -534,7 +534,7 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
             const ValVar* pVar = tdCallGraph->getThreadAPI()->getForkedFun(*it);
             if(SVFUtil::dyn_cast<FunValVar>(pVar) == nullptr)
             {
-                SVFIR *pag = this->getPAG();
+                PAG *pag = this->getPAG();
                 const NodeBS targets = this->getPts(pVar->getId()).toNodeBS();
                 for(NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ++ii)
                 {
@@ -559,8 +559,8 @@ void BVDataPTAImpl::onTheFlyThreadCallGraphSolve(const CallSiteToFunPtrMap& call
  */
 void BVDataPTAImpl::normalizePointsTo()
 {
-    SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::OffsetToGepVarMap &GepObjVarMap = pag->getGepObjNodeMap();
+    PAG::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
+    PAG::OffsetToGepVarMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
@@ -585,7 +585,7 @@ void BVDataPTAImpl::normalizePointsTo()
     }
 
     // remove the collected redundant gep nodes in each pointers's pts
-    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
         NodeID n = nIter->first;
 

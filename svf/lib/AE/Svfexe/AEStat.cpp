@@ -22,7 +22,7 @@
 
 #include "AE/Svfexe/AEStat.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -53,7 +53,7 @@ void AEStat::finializeStat()
     }
     generalNumMap["SVF_STMT_NUM"] = count;
 
-    u32_t totalICFGNodes = _ae->svfir->getICFG()->nodeNum;
+    u32_t totalICFGNodes = _ae->pag->getICFG()->nodeNum;
     generalNumMap["ICFG_Node_Num"] = totalICFGNodes;
 
     // Calculate coverage: use allAnalyzedNodes which tracks all nodes across all entry points
@@ -75,7 +75,7 @@ void AEStat::finializeStat()
     u32_t extCallSiteNum = 0;
     Set<const FunObjVar *> funs;
     Set<const FunObjVar *> analyzedFuns;
-    for (const auto &it: *_ae->svfir->getICFG())
+    for (const auto &it: *_ae->pag->getICFG())
     {
         if (it.second->getFun())
         {

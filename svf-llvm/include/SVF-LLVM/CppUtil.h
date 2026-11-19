@@ -116,6 +116,9 @@ std::string getClassNameFromVtblObj(const std::string& vtblName);
  *    { { [4 x i8*] }, [32 x i8] }
  *
  *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
+ *
+ *  Flat arrays are returned in a synthetic struct without changing the global.
+ *  Returns nullptr for declarations or unsupported initializer layouts.
  */
 const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
 

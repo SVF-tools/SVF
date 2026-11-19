@@ -61,7 +61,7 @@ void FlowSensitiveStat::clearStat()
         _NumOfStoreSVFGNodesHaveInOut[i] = 0;
         _NumOfMSSAPhiSVFGNodesHaveInOut[i] = 0;
 
-        /// SVFIR nodes.
+        /// PAG nodes.
         _NumOfVarHaveINOUTPts[i] = 0;
         _NumOfVarHaveEmptyINOUTPts[i] = 0;
         _NumOfVarHaveINOUTPtsInFormalIn[i] = 0;
@@ -88,7 +88,7 @@ void FlowSensitiveStat::performStat()
 
     clearStat();
 
-    SVFIR* pag = fspta->getPAG();
+    PAG* pag = fspta->getPAG();
 
     // stat null ptr number
     statNullPtr();
@@ -102,7 +102,7 @@ void FlowSensitiveStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<NodeID> nodeSet;
-    for (SVFIR::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
+    for (PAG::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
         NodeID nodeId = nodeIt->first;
         PAGNode* pagNode = nodeIt->second;
@@ -201,7 +201,7 @@ void FlowSensitiveStat::performStat()
     PTNumStatMap["PHI_SNodesHaveOUT"] = _NumOfMSSAPhiSVFGNodesHaveInOut[OUT_SET];
 
     /*-----------------------------------------------------*/
-    // SVFIR nodes.
+    // PAG nodes.
     PTNumStatMap["VarHaveIN"] = _NumOfVarHaveINOUTPts[IN_SET];
     PTNumStatMap["VarHaveOUT"] = _NumOfVarHaveINOUTPts[OUT_SET];
 
@@ -270,7 +270,7 @@ void FlowSensitiveStat::performStat()
 void FlowSensitiveStat::statNullPtr()
 {
     _NumOfNullPtr = 0;
-    for (SVFIR::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
+    for (PAG::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID pagNodeId = iter->first;
@@ -332,7 +332,7 @@ void FlowSensitiveStat::statPtsSize()
     /// get points-to set size information for top-level pointers.
     u32_t totalValidTopLvlPointers = 0;
     u32_t topTopLvlPtsSize = 0;
-    for (SVFIR::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
+    for (PAG::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID node = iter->first;
@@ -389,7 +389,7 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
 
         /*-----------------------------------------------------*/
 
-        // Count SVFIR nodes and their points-to set size.
+        // Count PAG nodes and their points-to set size.
         const PtsMap& cptsMap = it->second;
         PtsMap::const_iterator ptsIt = cptsMap.begin();
         PtsMap::const_iterator ptsEit = cptsMap.end();

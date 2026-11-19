@@ -31,14 +31,14 @@
 #include "Util/SVFUtil.h"
 #include "Util/CallGraphBuilder.h"
 #include "Graphs/ICFGNode.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Graphs/CallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-CallGraph* CallGraphBuilder::buildSVFIRCallGraph(const std::vector<const FunObjVar*>& funset)
+CallGraph* CallGraphBuilder::buildPAGCallGraph(const std::vector<const FunObjVar*>& funset)
 {
     CallGraph* callgraph = new CallGraph();
     for (const FunObjVar* svfFunc: funset)
@@ -69,17 +69,16 @@ CallGraph* CallGraphBuilder::buildSVFIRCallGraph(const std::vector<const FunObjV
 
 CallGraph* CallGraphBuilder::buildPTACallGraph()
 {
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    return new CallGraph(*svfirCallGraph);
+    return new CallGraph(*(PAG::getPAG()->getCallGraph()));
 }
 
 ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
 {
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    ThreadCallGraph* cg = new ThreadCallGraph(*svfirCallGraph);
+    const CallGraph* pagCallGraph = PAG::getPAG()->getCallGraph();
+    ThreadCallGraph* cg = new ThreadCallGraph(*pagCallGraph);
 
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *pagCallGraph)
     {
         for (auto it : *(item.second)->getFunction())
         {
@@ -105,7 +104,7 @@ ThreadCallGraph* CallGraphBuilder::buildThreadCallGraph()
         }
     }
     // record join sites
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *pagCallGraph)
     {
         for (auto it : *(item.second)->getFunction())
         {

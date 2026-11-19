@@ -113,7 +113,7 @@ protected:
         NodeID retdef = getDef(fun_ret);
         /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h: addFormalRetVFGNode).
         /// Therefore, we do not connect return edge from a function without any return instruction (i.e., pag->isPhiNode(fun_ret)==false)
-        /// because unique fun_ret SVFVar was not collected as a PhiNode in SVFIRBuilder::visitReturnInst
+        /// because unique fun_ret SVFVar was not collected as a PhiNode in PAGBuilder::visitReturnInst
         if (pag->isPhiNode(fun_ret)==false)
             return;
 
@@ -270,7 +270,7 @@ private:
     inline void resetDef(const ValVar* valVar, const SVFGNode* node)
     {
         ValVarToDefMapTy::iterator it = ValVarToDefMap.find(valVar);
-        assert(it != ValVarToDefMap.end() && "a SVFIR node doesn't have definition before");
+        assert(it != ValVarToDefMap.end() && "a PAG node doesn't have definition before");
         it->second = node->getId();
     }
 
@@ -301,11 +301,11 @@ private:
     //@{
     inline bool actualInOfIndCS(const ActualINSVFGNode* ai) const
     {
-        return (SVFIR::getPAG()->isIndirectCallSites(ai->getCallSite()));
+        return (PAG::getPAG()->isIndirectCallSites(ai->getCallSite()));
     }
     inline bool actualOutOfIndCS(const ActualOUTSVFGNode* ao) const
     {
-        return (SVFIR::getPAG()->isIndirectCallSites(ao->getCallSite()));
+        return (PAG::getPAG()->isIndirectCallSites(ao->getCallSite()));
     }
     //@}
 

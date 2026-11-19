@@ -48,7 +48,7 @@ public:
     static VersionedVar atKey(NodeID, Version);
 
     /// Constructor
-    VersionedFlowSensitive(SVFIR *_pag, PTATY type = PTATY::VFS_WPA);
+    VersionedFlowSensitive(PAG *_pag, PTATY type = PTATY::VFS_WPA);
 
     /// Initialize analysis
     virtual void initialize() override;
@@ -75,7 +75,7 @@ public:
     //@}
 
     /// Create single instance of versioned flow-sensitive points-to analysis.
-    static VersionedFlowSensitive *createVFSWPA(SVFIR *_pag)
+    static VersionedFlowSensitive *createVFSWPA(PAG *_pag)
     {
         if (vfspta == nullptr)
         {

@@ -33,7 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/GraphPrinter.h"
 #include "Graphs/ICFGNode.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/GeneralType.h"
 #include "Util/SVFUtil.h"
 

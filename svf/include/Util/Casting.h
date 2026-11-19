@@ -217,8 +217,8 @@ struct isa_impl_wrap
     static bool doit(const From &Val)
     {
         return isa_impl_wrap<To, SimpleFrom,
-               typename simplify_type<SimpleFrom>::SimpleType>::doit(
-                   simplify_type<const From>::getSimplifiedValue(Val));
+        typename simplify_type<SimpleFrom>::SimpleType>::doit(
+            simplify_type<const From>::getSimplifiedValue(Val));
     }
 };
 
@@ -325,8 +325,8 @@ template<class To, class From, class SimpleFrom> struct cast_convert_val
     static typename cast_retty<To, From>::ret_type doit(From &Val)
     {
         return cast_convert_val<To, SimpleFrom,
-               typename simplify_type<SimpleFrom>::SimpleType>::doit(
-                   simplify_type<From>::getSimplifiedValue(Val));
+        typename simplify_type<SimpleFrom>::SimpleType>::doit(
+            simplify_type<From>::getSimplifiedValue(Val));
     }
 };
 
@@ -382,7 +382,7 @@ inline typename cast_retty<X, Y *>::ret_type cast(Y *Val)
 
 template <class X, class Y>
 inline typename cast_retty<X, std::unique_ptr<Y>>::ret_type
-        cast(std::unique_ptr<Y> &&Val)
+cast(std::unique_ptr<Y> &&Val)
 {
     assert(SVFUtil::isa<X>(Val.get()) && "cast<Ty>() argument of incompatible type!");
     using ret_type = typename cast_retty<X, std::unique_ptr<Y>>::ret_type;

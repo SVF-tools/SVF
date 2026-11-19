@@ -425,7 +425,7 @@ PHIVFGNode::PHIVFGNode(NodeID id, const ValVar* r,VFGNodeK k): VFGNode(id, k), r
  * 2) connect VFG edges
  *    between two statements (SVFStmts)
  */
-VFG::VFG(CallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(SVFIR::getPAG()), kind(k)
+VFG::VFG(CallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(PAG::getPAG()), kind(k)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate VFG Top Level Node\n"));
@@ -452,7 +452,7 @@ void VFG::addVFGNodes()
 
     // initialize dummy definition null pointers in order to uniform the construction
     // to be noted for black hole pointer it has already has address edge connected,
-    // and its definition will be set when processing addr SVFIR edge.
+    // and its definition will be set when processing addr PAG edge.
     addNullPtrVFGNode(pag->getValVar(pag->getNullPtr()));
 
     // initialize address nodes
@@ -507,10 +507,10 @@ void VFG::addVFGNodes()
     }
 
     // initialize actual parameter nodes
-    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end(); it !=eit; ++it)
+    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end(); it !=eit; ++it)
     {
 
-        for(SVFIR::ValVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit)
+        for(PAG::ValVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit)
         {
             const ValVar* svfVar = *pit;
             if (isInterestedSVFVar(svfVar))
@@ -519,7 +519,7 @@ void VFG::addVFGNodes()
     }
 
     // initialize actual return nodes (callsite return)
-    for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it !=eit; ++it)
+    for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it !=eit; ++it)
     {
 
         /// for external function we do not create acutalRet VFGNode
@@ -532,11 +532,11 @@ void VFG::addVFGNodes()
     }
 
     // initialize formal parameter nodes
-    for(SVFIR::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end(); it !=eit; ++it)
+    for(PAG::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end(); it !=eit; ++it)
     {
         const FunObjVar* func = it->first;
 
-        for(SVFIR::ValVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit)
+        for(PAG::ValVarList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit)
         {
             const ValVar* param = *pit;
             if (isInterestedSVFVar(param) == false || hasBlackHoleConstObjAddrAsDef(param))
@@ -558,7 +558,7 @@ void VFG::addVFGNodes()
     }
 
     // initialize formal return nodes (callee return)
-    for (SVFIR::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it != eit; ++it)
+    for (PAG::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it != eit; ++it)
     {
         const FunObjVar* func = it->first;
 
@@ -952,17 +952,17 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
  */
 void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const FunObjVar* callee, VFGEdgeSetTy& edges)
 {
-    SVFIR * pag = SVFIR::getPAG();
+    PAG * pag = PAG::getPAG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
     const RetICFGNode* retBlockNode = callBlockNode->getRetICFGNode();
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
             matchArgs(callBlockNode, callee))
     {
-        const SVFIR::ValVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const SVFIR::ValVarList& funArgList = pag->getFunArgsList(callee);
-        SVFIR::ValVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
-        SVFIR::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        const PAG::ValVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const PAG::ValVarList& funArgList = pag->getFunArgsList(callee);
+        PAG::ValVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
+        PAG::ValVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
         {
             const ValVar *cs_arg = *csArgIt;
@@ -1084,12 +1084,12 @@ const SVFVar* ArgumentVFGNode::getValue() const
 namespace SVF
 {
 template<>
-struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
+struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
 {
 
     typedef VFGNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVFIR*>(isSimple)
+        DOTGraphTraits<PAG*>(isSimple)
     {
     }
 

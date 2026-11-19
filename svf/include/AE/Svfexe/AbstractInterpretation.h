@@ -35,7 +35,7 @@
 #include "AE/Svfexe/AEWTO.h"
 #include "AE/Svfexe/AbsExtAPI.h"
 #include "AE/Svfexe/AEStat.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/SVFBugReport.h"
 #include "Util/WorkList.h"
 #include "Graphs/SCC.h"
@@ -129,7 +129,7 @@ public:
     /// Retrieve SVFVar given its ID; asserts if no such variable exists
     inline const SVFVar* getSVFVar(NodeID varId) const
     {
-        return svfir->getSVFVar(varId);
+        return pag->getSVFVar(varId);
     }
 
     // ---- Abstract Value Access ----------------------------------------
@@ -176,7 +176,7 @@ public:
 
     IntervalValue getGepElementIndex(const GepStmt* gep);
     IntervalValue getGepByteOffset(const GepStmt* gep);
-    AddressValue getGepObjAddrs(const ValVar* pointer, IntervalValue offset);
+    AddressValue getGepObjAddrs(const ICFGNode* node, const ValVar* pointer, IntervalValue offset);
 
     /// Read memory through the pointer's address targets.
     virtual AbstractValue loadValue(const ValVar* pointer,
@@ -235,6 +235,9 @@ protected:
     /// as-is.  Semi-sparse subclass: also pull cycle ValVars from def-sites.
     virtual AbstractState getFullCycleHeadState(const ICFGCycleWTO* cycle);
 
+    /// Run every detector on the current state of node.
+    void runDetectors(const ICFGNode* node);
+
     /// Widen prev with cur; write the widened state to trace[cycle_head].
     /// Returns true when next == prev (fixpoint).  Semi-sparse subclass
     /// additionally scatters ValVars to their def-sites.
@@ -254,6 +257,14 @@ protected:
     /// FullSparse additionally assembles inputs from direct SVFG predecessors.
     virtual bool mergeStatesFromPredecessors(const ICFGNode* node);
 
+    /// Add to state the ValVars that node's statements read from their PAG
+    /// predecessors. Only the sparse modes need this (SemiSparse overrides it).
+    virtual void mergeSparseValVarsFromPredecessors(const ICFGNode* node, AbstractState& state)
+    {
+        // Empty for dense: ValVars are carried along the ICFG, so those node
+        // reads are already in its state merged from the ICFG predecessors.
+    }
+
     /// Returns true if the branch edge is reachable under the current state.
     /// Pure query: does not update abstract states.
     bool isBranchEdgeFeasible(const IntraCFGEdge* edge, AbstractState& as);
@@ -264,6 +275,7 @@ protected:
     /// Return false when a carried value contradicts the selected branch.
     bool applyBranchRefinement(const IntraCFGEdge* edge, AbstractState& as);
 
+
 private:
     /// Initialize abstract state for the global ICFG node and process global
     /// statements
@@ -272,14 +284,21 @@ private:
     /// Handle a call site node: dispatch to ext-call, direct-call, or indirect-call handling
     virtual void handleCallSite(const ICFGNode* node);
 
+protected:
     /// Handle a WTO cycle (loop or recursive function) using widening/narrowing iteration
     virtual void handleLoopOrRecursion(const ICFGCycleWTO* cycle, const CallICFGNode* caller);
+
+    /// Handle one WTO component: merge and handle a singleton, or merge the
+    /// head of a cycle and iterate the cycle.
+    virtual void handleWTOComponent(const ICFGWTOComp* comp, const CallICFGNode* caller);
+
+private:
 
     /// Handle a function body via worklist-driven WTO traversal starting from funEntry
     void handleFunction(const ICFGNode* funEntry, const CallICFGNode* caller);
 
     /// Handle an ICFG node: execute statements; return true if state changed
-    bool handleICFGNode(const ICFGNode* node);
+    void handleICFGNode(const ICFGNode* node);
 
     /// Dispatch an SVF statement (Addr/Binary/Cmp/Load/Store/Copy/Gep/Select/Phi/Call/Ret) to its handler
     virtual void handleSVFStatement(const SVFStmt* stmt);
@@ -360,9 +379,19 @@ private:
 
 protected:
     /// Data and helpers reachable from SparseAbstractInterpretation.
-    SVFIR* svfir{nullptr};
+    PAG* pag{nullptr};
     AEWTO* preAnalysis{nullptr};
     Map<const ICFGNode*, AbstractState> abstractTrace; ///< per-node trace; owned here
+    /// The input of each top-level WTO component (a node, or a cycle) at its
+    /// previous iteration, i.e. the last time it was analysed, keyed by its
+    /// head.
+    Map<const ICFGNode*, AbstractState> preIterationInputs;
+
+    /// Whether comp's input now (its head merged again from its predecessors,
+    /// with a cycle's other nodes' ValVar reads) is covered by (contained in)
+    /// its input at the previous iteration; if not, the input now becomes its
+    /// previous-iteration input. head's state is restored afterwards.
+    bool isInputCoveredByPreIteration(const ICFGWTOComp* comp);
 
     bool shouldApplyNarrowing(const FunObjVar* fun);
 };

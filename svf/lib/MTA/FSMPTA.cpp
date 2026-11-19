@@ -136,7 +136,7 @@ NodeBS FSMPTA<SVFGGraph>::buildExecutionDependencyClosure(
     // FlowSensitive::solveConstraints invokes updateCallGraph() for the whole
     // program after every iteration. Its function-pointer reads are therefore
     // execution roots even when the call site is not itself in the target slice.
-    SVFIR* pag = graph->getPAG();
+    PAG* pag = graph->getPAG();
     for (const auto& callsiteAndPtr : pag->getIndirectCallsites())
     {
         const SVFVar* funPtr = pag->getGNode(callsiteAndPtr.second);

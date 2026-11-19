@@ -33,7 +33,7 @@
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFGStat.h"
 #include "Graphs/CallGraph.h"
-#include "SVFIR/SVFVariables.h"
+#include "SVFValues/SVFVariables.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -63,7 +63,7 @@ MemSSA::MemSSA(BVDataPTAImpl* p, std::unique_ptr<MRGenerator> mrGenerator)
     timeOfGeneratingMemRegions = (mrEnd - mrStart)/TIMEINTERVAL;
 }
 
-SVFIR* MemSSA::getPAG()
+PAG* MemSSA::getPAG()
 {
     return pta->getPAG();
 }
@@ -568,9 +568,7 @@ u32_t MemSSA::getBBPhiNum() const
  */
 void MemSSA::dumpMSSA(OutStream& Out)
 {
-
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const FunObjVar* fun = item.second->getFunction();
         if(Options::MSSAFun()!="" && Options::MSSAFun()!=fun->getName())

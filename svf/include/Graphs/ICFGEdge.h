@@ -111,7 +111,7 @@ public:
 class IntraCFGEdge : public ICFGEdge
 {
     friend class ICFG;
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class GraphDBClient;
 
 public:

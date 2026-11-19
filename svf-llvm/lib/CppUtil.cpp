@@ -260,13 +260,34 @@ std::string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
 
 const ConstantStruct *cppUtil::getVtblStruct(const GlobalValue *vtbl)
 {
-    const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
-    assert(vtblStruct && "Initializer of a vtable not a struct?");
+    const GlobalVariable *global = SVFUtil::dyn_cast<GlobalVariable>(vtbl);
+    if (!global || !global->hasInitializer())
+        return nullptr;
+
+    Constant *initializer = SVFUtil::cast<Constant>(global->getOperand(0));
+    const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(initializer);
+    // cir2c emits a flat array rather than Clang's struct of arrays.
+    if (auto *array = SVFUtil::dyn_cast<ConstantArray>(initializer))
+    {
+        if (!array->getType()->getElementType()->isPointerTy())
+            return nullptr;
+        return SVFUtil::cast<ConstantStruct>(
+                   ConstantStruct::getAnon(vtbl->getContext(), {array}));
+    }
+    if (!vtblStruct)
+        return nullptr;
 
     if (vtblStruct->getNumOperands() == 2 &&
             SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
             vtblStruct->getOperand(1)->getType()->isArrayTy())
-        return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
+        vtblStruct = SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
+
+    for (unsigned i = 0; i < vtblStruct->getNumOperands(); ++i)
+    {
+        const ConstantArray *array = SVFUtil::dyn_cast<ConstantArray>(vtblStruct->getOperand(i));
+        if (!array || !array->getType()->getElementType()->isPointerTy())
+            return nullptr;
+    }
 
     return vtblStruct;
 }

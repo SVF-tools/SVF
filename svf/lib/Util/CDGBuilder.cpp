@@ -122,8 +122,7 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
  */
 void CDGBuilder::buildControlDependence()
 {
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const FunObjVar *svfFun = (item.second)->getFunction();
         if (SVFUtil::isExtCall(svfFun)) continue;
@@ -227,7 +226,7 @@ void CDGBuilder::buildICFGNodeControlMap()
                         // not a branch statement:
                         //  invoke void %3(ptr noundef nonnull align 8 dereferenceable(8) %1, ptr noundef %2)
                         //          to label %invoke.cont1 unwind label %lpad
-                        SVFIR* pag = PAG::getPAG();
+                        PAG* pag = PAG::getPAG();
                         _controlDG->addCDGEdgeFromSrcDst(
                             controlNode, controllee,
                             pag->getSVFVar(pag->getNullPtr()), pos);

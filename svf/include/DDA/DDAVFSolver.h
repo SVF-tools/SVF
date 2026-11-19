@@ -53,7 +53,7 @@ public:
     typedef SCCDetection<SVFG*> SVFGSCC;
     typedef SCCDetection<CallGraph*> CallGraphSCC;
     typedef CallGraphEdge::CallInstSet CallInstSet;
-    typedef SVFIR::CallSiteSet CallSiteSet;
+    typedef PAG::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
     typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
@@ -316,7 +316,7 @@ protected:
     }
 
     /// Build SVFG
-    virtual inline void buildSVFG(SVFIR* pag)
+    virtual inline void buildSVFG(PAG* pag)
     {
         _ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
         _svfg = svfgBuilder.buildPTROnlySVFG(_ander);
@@ -772,7 +772,7 @@ protected:
     }
 
     bool outOfBudgetQuery;			///< Whether the current query is out of step limits
-    SVFIR* _pag;						///< SVFIR
+    PAG* _pag;						///< PAG
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;

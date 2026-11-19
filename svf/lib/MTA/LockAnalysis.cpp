@@ -34,7 +34,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Graphs/SlicedGraphs.h"
 
 using namespace SVF;

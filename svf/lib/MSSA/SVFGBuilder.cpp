@@ -28,10 +28,12 @@
  */
 #include "MSSA/SVFGBuilder.h"
 #include "Graphs/CallGraph.h"
+#include "Graphs/SparseObjGraph.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/MemPartition.h"
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/MemSSA.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "WPA/Andersen.h"
@@ -83,6 +85,14 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     if (Options::DumpVFG())
         svfg->dump("svfg_final");
 
+    if ((kind == VFG::FULLSVFG || kind == VFG::FULLSVFG_OPT) &&
+            Options::DumpSparseObjGraph())
+    {
+        PAG* pag = pta->getPAG();
+        SparseObjGraph routes(*svfg, *pag->getICFG(), *pta, *pag);
+        routes.dump("sparse_obj_graph");
+    }
+
     return svfg.get();
 }
 
@@ -122,8 +132,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta,
 
     auto mssa = std::make_unique<MemSSA>(pta, createMRGenerator(pta, ptrOnlyMSSA));
 
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item : *svfirCallGraph)
+    for (const auto& item : *(PAG::getPAG()->getCallGraph()))
     {
 
         const FunObjVar* fun = item.second->getFunction();

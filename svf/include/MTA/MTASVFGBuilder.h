@@ -100,14 +100,14 @@ public:
         bool operator<(const ThreadVFCandidate& other) const
         {
             return sourceNodeId < other.sourceNodeId ||
-                   (sourceNodeId == other.sourceNodeId &&
-                    destinationNodeId < other.destinationNodeId);
+            (sourceNodeId == other.sourceNodeId &&
+             destinationNodeId < other.destinationNodeId);
         }
 
         bool operator==(const ThreadVFCandidate& other) const
         {
             return sourceNodeId == other.sourceNodeId &&
-                   destinationNodeId == other.destinationNodeId;
+            destinationNodeId == other.destinationNodeId;
         }
 
         NodeID sourceNodeId;

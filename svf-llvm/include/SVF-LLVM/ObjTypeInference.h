@@ -74,8 +74,6 @@ public:
     /// validate type inference
     void validateTypeCheck(const CallBase *cs);
 
-    void typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
-
     /// default type
     const Type *defaultType(const Value *val);
 

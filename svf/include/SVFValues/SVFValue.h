@@ -29,8 +29,8 @@
  *      Author: Xiao Cheng, Yulei Sui
  */
 
-#ifndef INCLUDE_SVFIR_SVFVALUE_H_
-#define INCLUDE_SVFIR_SVFVALUE_H_
+#ifndef INCLUDE_PAG_SVFVALUE_H_
+#define INCLUDE_PAG_SVFVALUE_H_
 
 #include "Util/GeneralType.h"
 
@@ -336,4 +336,4 @@ OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
 
 }
 
-#endif /* INCLUDE_SVFIR_SVFVALUE_H_ */
+#endif /* INCLUDE_PAG_SVFVALUE_H_ */

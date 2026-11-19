@@ -1,20 +1,20 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
-# Stop ubuntu-20 interactive options.
+# Disable interactive package prompts.
 ENV DEBIAN_FRONTEND noninteractive
 ARG TARGETPLATFORM
 # Stop script if any individual command fails.
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=21.1.0
+ENV llvm_version=22.1.0
 
 # Define home directory
 ENV HOME=/home/SVF-tools
 
 # Define dependencies.
-# Use the default python3-dev that ships with the Ubuntu base image (24.04
-# ships python 3.12) instead of pulling python3.10-dev from a PPA — the
+# Use the default python3-dev that ships with the Ubuntu base image instead
+# of pulling python3.10-dev from a PPA — the
 # Launchpad PPA infrastructure has been intermittently unreachable
 # (HTTP 504 from add-apt-repository), and SVF itself does not pin a Python
 # version, so the base-image python is sufficient.

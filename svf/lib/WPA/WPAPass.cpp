@@ -66,7 +66,7 @@ WPAPass::~WPAPass()
 /*!
  * We start from here
  */
-void WPAPass::runOnModule(SVFIR* pag)
+void WPAPass::runOnModule(PAG* pag)
 {
     for (u32_t i = 0; i<= PTATY::Default_PTA; i++)
     {
@@ -80,7 +80,7 @@ void WPAPass::runOnModule(SVFIR* pag)
 /*!
  * Create pointer analysis according to a specified kind and then analyze the module.
  */
-void WPAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
+void WPAPass::runPointerAnalysis(PAG* pag, u32_t kind)
 {
     /// Initialize pointer analysis.
     switch (kind)
@@ -132,12 +132,12 @@ void WPAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 
 void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
 {
-    SVFIR* pag = pta->getPAG();
-    for (SVFIR::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit)
+    PAG* pag = pta->getPAG();
+    for (PAG::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit)
     {
         PAGNode* node1 = lit->second;
         PAGNode* node2 = node1;
-        for (SVFIR::iterator rit = lit, erit = pag->end(); rit != erit; ++rit)
+        for (PAG::iterator rit = lit, erit = pag->end(); rit != erit; ++rit)
         {
             node2 = rit->second;
             if(node1==node2)

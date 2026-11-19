@@ -29,7 +29,7 @@
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "AE/Svfexe/SparseAbstractInterpretation.h"
 #include "AE/Svfexe/AbsExtAPI.h"
-#include "SVFIR/SVFIR.h"
+#include "Graphs/PAG.h"
 #include "Util/Options.h"
 #include "Util/WorkList.h"
 #include "Graphs/CallGraph.h"
@@ -62,9 +62,9 @@ AbstractInterpretation::AbstractInterpretation()
 {
     stat = new AEStat(this);
     // Run Andersen's pointer analysis and build WTO
-    svfir = PAG::getPAG();
-    icfg = svfir->getICFG();
-    preAnalysis = new AEWTO(svfir, icfg);
+    pag = PAG::getPAG();
+    icfg = pag->getICFG();
+    preAnalysis = new AEWTO(pag, icfg);
     callGraph = preAnalysis->getCallGraph();
     icfg->updateCallGraph(callGraph);
     preAnalysis->initWTO();
@@ -243,7 +243,7 @@ void AbstractInterpretation::handleGlobalNode()
     init = AbstractState();
     // NullPtr has no backing SVFVar. Model it directly as the singleton null
     // address; BlkPtr is initialized directly below for the same reason.
-    init[IRGraph::NullPtr] = AddressValue(NullMemAddr);
+    init[PAGBase::NullPtr] = AddressValue(NullMemAddr);
 
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
@@ -574,16 +574,18 @@ bool AbstractInterpretation::applyBranchRefinement(const IntraCFGEdge* edge,
     const ICFGNode* pred = edge->getSrcNode();
     s64_t succ = edge->getSuccessorCondValue();
 
-    assert(!cond->getInEdges().empty() &&
-           "branch condition has no defining edge?");
+    // A formal argument may directly drive a branch or switch. It has no SVF
+    // defining edge, so feasibility is known but there is no Obj to refine.
+    if (cond->getInEdges().empty())
+        return true;
     const SVFStmt* condDef = *cond->getInEdges().begin();
 
     if (const CmpStmt* cmpStmt = SVFUtil::dyn_cast<CmpStmt>(condDef))
     {
         s32_t predicate = cmpStmt->getPredicate();
 
-        if (cmpStmt->getOpVarID(0) == IRGraph::NullPtr ||
-                cmpStmt->getOpVarID(1) == IRGraph::NullPtr)
+        if (cmpStmt->getOpVarID(0) == PAGBase::NullPtr ||
+                cmpStmt->getOpVarID(1) == PAGBase::NullPtr)
         {
             // p == NULL / p != NULL: no interval obj to refine.
         }
@@ -707,7 +709,23 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
         AbstractState& as)
 {
     const SVFVar* cmpVar = edge->getCondition();
-    assert(!cmpVar->getInEdges().empty() && "branch condition has no defining edge?");
+    // A formal argument can be used directly as a branch or switch condition
+    // without an SVF defining edge (e.g. switch on a function argument).
+    if (cmpVar->getInEdges().empty())
+    {
+        const auto* branch = SVFUtil::cast<BranchStmt>(edge->getSrcNode()->getSVFStmts().back());
+        // PAGBuilder emits true=1, false=0 for br; switch starts with default=-1.
+        if (branch->getNumSuccessors() == 2 &&
+                branch->getSuccessorCondValue(0) == 1 &&
+                branch->getSuccessorCondValue(1) == 0)
+        {
+            IntervalValue value = getAbsValue(cmpVar, edge->getSrcNode()).getInterval();
+            value.meet_with(IntervalValue(edge->getSuccessorCondValue()));
+            return !value.isBottom();
+        }
+        return isSwitchBranchEdgeFeasible(edge,
+                                          getAbsValue(cmpVar, edge->getSrcNode()).getInterval());
+    }
     if (SVFUtil::isa<CmpStmt>(*cmpVar->getInEdges().begin()))
         return isCmpBranchEdgeFeasible(edge, as);
     return isSwitchBranchEdgeFeasible(edge,
@@ -718,9 +736,8 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
  * Handle an ICFG node: execute statements on the current abstract state.
  * The node's pre-state must already be in getAbsState(node) (set by
  * mergeStatesFromPredecessors, or by handleGlobalNode for the global node).
- * Returns true if the abstract state has changed, false if fixpoint reached or unreachable.
  */
-bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
+void AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
     // Check reachability: pre-state must have been propagated by predecessors
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
@@ -737,12 +754,9 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         }
         else
         {
-            return false;  // unreachable node
+            return;  // unreachable node
         }
     }
-
-    // Store the previous state for fixpoint detection
-    AbstractState prevState = getAbsState(node);
 
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
@@ -759,18 +773,17 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         handleCallSite(callNode);
     }
 
-    // Run detectors
-    for (auto& detector: detectors)
-        detector->detect(node);
+    runDetectors(node);
     stat->countStateSize();
 
     // Track this node as analyzed (for coverage statistics across all entry points)
     allAnalyzedNodes.insert(node);
+}
 
-    if (getAbsState(node) == prevState)
-        return false;
-
-    return true;
+void AbstractInterpretation::runDetectors(const ICFGNode* node)
+{
+    for (auto& detector: detectors)
+        detector->detect(node);
 }
 
 /**
@@ -790,18 +803,74 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     while (!worklist.empty())
     {
         const ICFGWTOComp* comp = worklist.pop();
+        // A top-level component (a node, or a whole cycle) is skipped when
+        // its input is covered by its input at the previous iteration:
+        // abstractTrace holds results for that input, which cover this one.
+        if (!isInputCoveredByPreIteration(comp))
+            handleWTOComponent(comp, caller);
+    }
+}
 
-        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+bool AbstractInterpretation::isInputCoveredByPreIteration(const ICFGWTOComp* comp)
+{
+    // The nodes of comp: a node, or all nodes of a cycle.
+    Set<const ICFGNode*> nodes;
+    std::vector<const ICFGWTOComp*> todo{comp};
+    while (!todo.empty())
+    {
+        const ICFGWTOComp* c = todo.back();
+        todo.pop_back();
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(c))
+            nodes.insert(singleton->getICFGNode());
+        else
         {
-            const ICFGNode* node = singleton->getICFGNode();
-            if (mergeStatesFromPredecessors(node))
-                handleICFGNode(node);
+            const ICFGCycleWTO* cycle = SVFUtil::cast<ICFGCycleWTO>(c);
+            nodes.insert(cycle->head()->getICFGNode());
+            for (const ICFGWTOComp* sub : cycle->getWTOComponents())
+                todo.push_back(sub);
         }
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-        {
-            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
-                handleLoopOrRecursion(cycle, caller);
-        }
+    }
+    const ICFGNode* head = SVFUtil::isa<ICFGSingletonWTO>(comp)
+                           ? SVFUtil::cast<ICFGSingletonWTO>(comp)->getICFGNode()
+                           : SVFUtil::cast<ICFGCycleWTO>(comp)->head()->getICFGNode();
+
+    // Input: head merged from its predecessors (head's state is put back).
+    const bool had = hasAbsState(head);
+    const AbstractState output = had ? getAbsState(head) : AbstractState();
+    const bool reachable = mergeStatesFromPredecessors(head);
+    AbstractState input = reachable ? getAbsState(head) : AbstractState();
+    if (had)
+        abstractTrace[head] = output;
+    else
+        abstractTrace.erase(head);
+    if (!reachable)
+        return false;
+    // A cycle's other nodes also read ValVars, which in the sparse modes are
+    // not carried to its head.
+    for (const ICFGNode* node : nodes)
+        if (node != head)
+            mergeSparseValVarsFromPredecessors(node, input);
+
+    const auto pre = preIterationInputs.find(head);
+    if (pre != preIterationInputs.end() && pre->second >= input)
+        return true;
+    preIterationInputs[head] = std::move(input);
+    return false;
+}
+
+void AbstractInterpretation::handleWTOComponent(const ICFGWTOComp* comp,
+        const CallICFGNode* caller)
+{
+    if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+    {
+        const ICFGNode* node = singleton->getICFGNode();
+        if (mergeStatesFromPredecessors(node))
+            handleICFGNode(node);
+    }
+    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+    {
+        if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
+            handleLoopOrRecursion(cycle, caller);
     }
 }
 
@@ -846,7 +915,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
         return callee;
 
     // Indirect call: resolve callee through pointer analysis
-    const auto callsiteMaps = svfir->getIndirectCallsites();
+    const auto callsiteMaps = pag->getIndirectCallsites();
     auto it = callsiteMaps.find(callNode);
     if (it == callsiteMaps.end())
         return nullptr;
@@ -855,7 +924,7 @@ const FunObjVar* AbstractInterpretation::getCallee(const CallICFGNode* callNode)
     if (!hasAbsState(callNode))
         return nullptr;
 
-    const AbstractValue& Addrs = getAbsValue(svfir->getSVFVar(call_id), callNode);
+    const AbstractValue& Addrs = getAbsValue(pag->getSVFVar(call_id), callNode);
     if (!Addrs.isAddr() || Addrs.getAddrs().empty())
         return nullptr;
 
@@ -896,6 +965,10 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
         for (const FunObjVar* callee : callees)
         {
             if (callee->isDeclaration())
+                continue;
+            // A recursive back edge through a function pointer: the SCC is
+            // analysed by the cycle that contains this call, as for direct calls.
+            if (isRecursiveFun(callee) && isRecursiveCallSite(callNode, callee))
                 continue;
             const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
             handleFunction(calleeEntry, callNode);
@@ -969,7 +1042,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     // entry if it actually exists.
     {
         const auto& vmap = getAbsState(stmt->getICFGNode()).getVarToVal();
-        auto it = vmap.find(IRGraph::NullPtr);
+        auto it = vmap.find(PAGBase::NullPtr);
         (void)it; // Suppress warning of unused variable under release build
         assert(it == vmap.end() ||
                (it->second.isAddr() &&
@@ -981,7 +1054,7 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
     const ICFGNode* node = gep->getICFGNode();
     IntervalValue offsetPair = getGepElementIndex(gep);
-    AddressValue gepAddrs = getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
+    AddressValue gepAddrs = getGepObjAddrs(node, SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
     updateAbsValue(gep->getLHSVar(), gepAddrs, node);
 }
 
@@ -1339,6 +1412,8 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
 
     auto getTruncValue = [&](const SVFVar* var, const SVFType* dstType)
     {
+        if (!SVFUtil::isa<SVFIntegerType>(dstType))
+            return IntervalValue::top();
         const IntervalValue& itv = getAbsValue(var, node).getInterval();
         if(itv.isBottom()) return itv;
         s64_t int_lb = itv.lb().getIntNumeral();
@@ -1370,8 +1445,7 @@ void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
         }
         else
         {
-            assert(false && "cannot support dst int type other than u8/16/32");
-            abort();
+            return IntervalValue::top();
         }
     };
 

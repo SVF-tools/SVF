@@ -32,7 +32,7 @@
 
 #include "MemoryModel/PTATY.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "SVFIR/PAGBuilderFromFile.h"
+#include "Graphs/PAGBuilderFromFile.h"
 #include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
@@ -49,7 +49,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-SVFIR* PointerAnalysis::pag = nullptr;
+PAG* PointerAnalysis::pag = nullptr;
 
 const std::string PointerAnalysis::aliasTestMayAlias            = "MAYALIAS";
 const std::string PointerAnalysis::aliasTestMayAliasMangled     = "_Z8MAYALIASPvS_";
@@ -67,7 +67,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
 /*!
  * Constructor
  */
-PointerAnalysis::PointerAnalysis(SVFIR *p, PTATY ty, bool alias_check) : ptaTy(ty), stat(nullptr), callgraph(nullptr),
+PointerAnalysis::PointerAnalysis(PAG *p, PTATY ty, bool alias_check) : ptaTy(ty), stat(nullptr), callgraph(nullptr),
     callGraphSCC(nullptr), icfg(nullptr),
     chgraph(nullptr)
 {
@@ -84,7 +84,7 @@ PointerAnalysis::PointerAnalysis(SVFIR *p, PTATY ty, bool alias_check) : ptaTy(t
 PointerAnalysis::~PointerAnalysis()
 {
     destroy();
-    // do not delete the SVFIR for now
+    // do not delete the PAG for now
     //delete pag;
 }
 
@@ -113,7 +113,7 @@ void PointerAnalysis::destroy()
  */
 void PointerAnalysis::initialize()
 {
-    assert(pag && "SVFIR has not been built!");
+    assert(pag && "PAG has not been built!");
 
     chgraph = pag->getCHG();
 
@@ -158,7 +158,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
  */
 void PointerAnalysis::resetObjFieldSensitive()
 {
-    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
         if(ObjVar* node = SVFUtil::dyn_cast<ObjVar>(nIter->second))
             const_cast<BaseObjVar*>(pag->getBaseObject(node->getId()))->setFieldSensitive();
@@ -268,7 +268,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     {
         outs() << "##<Dummy Obj > id:" << node->getId();
     }
-    else if (!SVFUtil::isa<DummyValVar>(node) && !SVFIR::pagReadFromTXT())
+    else if (!SVFUtil::isa<DummyValVar>(node) && !PAG::pagReadFromTXT())
     {
         outs() << "##<" << node->getName() << "> ";
         outs() << "Source Loc: " << node->getSourceLoc();
@@ -304,7 +304,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
         else
         {
-            if (!SVFIR::pagReadFromTXT())
+            if (!PAG::pagReadFromTXT())
             {
                 outs() << "<" << pagNode->getName() << "> ";
                 outs() << "Source Loc: "

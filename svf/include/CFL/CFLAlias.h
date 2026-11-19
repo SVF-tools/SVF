@@ -33,7 +33,7 @@
 #include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
 #include "MemoryModel/PTATY.h"
-#include "SVFIR/SVFType.h"
+#include "SVFValues/SVFType.h"
 #include "Util/GeneralType.h"
 
 namespace SVF
@@ -45,7 +45,7 @@ class CFLAlias : public CFLBase
 public:
     typedef OrderedMap<const CallICFGNode*, NodeID> CallSite2DummyValPN;
 
-    CFLAlias(SVFIR* ir) : CFLBase(ir, PTATY::CFLFICI_WPA)
+    CFLAlias(PAG* pag) : CFLBase(pag, PTATY::CFLFICI_WPA)
     {
     }
 
@@ -81,9 +81,9 @@ public:
             if((*outedge)->getEdgeKind() == graph->getStartKind())
             {
                 // Need to Find dst addr src
-                SVFVar *vNode = svfir->getGNode((*outedge)->getDstID());
+                SVFVar *vNode = pag->getGNode((*outedge)->getDstID());
                 NodeID basevNodeID;
-                // Remove svfir->getBaseValVar, SVF IR api change
+                // Remove pag->getBaseValVar, PAG api change
                 if (vNode->hasIncomingEdges(SVFStmt::Gep))
                 {
                     SVFStmt::SVFStmtSetTy& geps = vNode->getIncomingEdges(SVFStmt::Gep);
@@ -147,7 +147,7 @@ private:
 class POCRAlias : public CFLAlias
 {
 public:
-    POCRAlias(SVFIR* ir) : CFLAlias(ir)
+    POCRAlias(PAG* pag) : CFLAlias(pag)
     {
     }
     /// Initialize POCR Solver
@@ -157,7 +157,7 @@ public:
 class POCRHybrid : public CFLAlias
 {
 public:
-    POCRHybrid(SVFIR* ir) : CFLAlias(ir)
+    POCRHybrid(PAG* pag) : CFLAlias(pag)
     {
     }
 

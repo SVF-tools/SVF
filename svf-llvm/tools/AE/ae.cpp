@@ -25,7 +25,7 @@
  //
  // Author: Jiawei Wang, Xiao Cheng, Jiawei Yang, Jiawei Ren, Yulei Sui
  */
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
@@ -686,6 +686,11 @@ public:
         assert((IntervalValue(IntervalValue::minus_infinity()) << IntervalValue(2, 2)).equals(IntervalValue(IntervalValue::minus_infinity())));
         assert((IntervalValue(2, 2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
         assert((IntervalValue(0, 0) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(0, 0)));
+        assert((IntervalValue(0) << IntervalValue(31)).equals(IntervalValue(0)));
+        assert((IntervalValue(0) << IntervalValue(31, 32)).equals(IntervalValue(0)));
+        assert((IntervalValue(0) << IntervalValue(-1)).equals(IntervalValue::bottom()));
+        assert((IntervalValue(0) << IntervalValue::bottom()).equals(IntervalValue::bottom()));
+        assert((IntervalValue(1) << IntervalValue(31)).equals(IntervalValue::top()));
         assert((IntervalValue(-2, -2) << IntervalValue(IntervalValue::plus_infinity())).equals(IntervalValue(IntervalValue::top())));
         assert((IntervalValue(0, 0) << IntervalValue(2, 2)).equals(IntervalValue(0, 0)));
         assert((IntervalValue(2, 2) << IntervalValue(3, 3)).equals(IntervalValue(16, 16)));
@@ -882,9 +887,9 @@ int main(int argc, char** argv)
     }
 
     LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build();
-    // Run Andersen's to resolve indirect calls, then update SVFIR with resolved targets.
+    PAGBuilder builder;
+    PAG* pag = builder.build();
+    // Run Andersen's to resolve indirect calls, then update PAG with resolved targets.
     // The Andersen singleton will be reused inside AbstractInterpretation::runOnModule().
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     builder.updateCallGraph(ander->getCallGraph());

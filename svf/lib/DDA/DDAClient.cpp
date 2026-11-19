@@ -64,9 +64,9 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
         if(pta->getPAG()->isValidTopLevelPtr(node))
         {
             DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
+                                     " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
             DBOUT(DDDA,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
+                                 " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
             setCurrentQueryPtr(node->getId());
             pta->computeDDAPts(node->getId());
         }
@@ -77,10 +77,10 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     stat->setMemUsageAfter(vmrss, vmsize);
 }
 
-OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
+OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
 {
     setPAG(p);
-    for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
             eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
     {
         if (it->first->isVirtualCall())
@@ -175,7 +175,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
 
 /// Only collect function pointers as query candidates.
-OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
+OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
 {
     setPAG(pag);
     SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);

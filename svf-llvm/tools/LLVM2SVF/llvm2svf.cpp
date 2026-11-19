@@ -1,4 +1,4 @@
-//===- llvm2svf.cpp -- LLVM IR to SVF IR conversion  -------------------------//
+//===- llvm2svf.cpp -- LLVM IR to PAG conversion  -------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -27,7 +27,7 @@
  *     Authors: Xudong Wang
  */
 
-#include "SVF-LLVM/SVFIRBuilder.h"
+#include "SVF-LLVM/PAGBuilder.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
@@ -58,8 +58,8 @@ int main(int argc, char** argv)
     const std::string jsonPath = replaceExtension(moduleNameVec.front());
     // PAG is borrowed from a unique_ptr, so we don't need to delete it.
 
-    assert(false && "Please implement SVFIRWriter::writeJsonToPath");
-    SVFUtil::outs() << "SVF IR is written to '" << jsonPath << "'\n";
+    assert(false && "Please implement PAGWriter::writeJsonToPath");
+    SVFUtil::outs() << "PAG  is written to '" << jsonPath << "'\n";
     LLVMModuleSet::releaseLLVMModuleSet();
     return 0;
 }

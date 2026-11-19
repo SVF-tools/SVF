@@ -30,8 +30,8 @@
  */
 
 #include "MemoryModel/AccessPath.h"
-#include "SVFIR/SVFIR.h"
-#include "SVFIR/SVFVariables.h"
+#include "Graphs/PAG.h"
+#include "SVFValues/SVFVariables.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
@@ -142,8 +142,8 @@ APOffset AccessPath::computeConstantByteOffset() const
         ///     i = 1, type: [10 x i8], ArrType, op = 8
         const SVFType* type = idxOperandPairs[i].second;
         /// if offsetVarAndGepTypePairs[i].second is nullptr, it means
-        ///   GepStmt comes from external API, this GepStmt is assigned in SVFIRExtAPI.cpp
-        ///   at SVFIRBuilder::getBaseTypeAndFlattenedFields ls.addOffsetVarAndGepTypePair()
+        ///   GepStmt comes from external API, this GepStmt is assigned in PAGExtAPI.cpp
+        ///   at PAGBuilder::getBaseTypeAndFlattenedFields ls.addOffsetVarAndGepTypePair()
         assert(type && "this GepStmt comes from ExternalAPI cannot call this api");
         const SVFType* type2 = type;
         if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))

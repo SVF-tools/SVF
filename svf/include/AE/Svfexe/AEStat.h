@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 #pragma once
-#include "SVFIR/SVFType.h"
+#include "SVFValues/SVFType.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 #include <string>

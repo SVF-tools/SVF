@@ -40,7 +40,7 @@ namespace SVF
 {
 
 class AndersenBase;
-class SVFIR;
+class PAG;
 class ConstraintGraph;
 
 /*!

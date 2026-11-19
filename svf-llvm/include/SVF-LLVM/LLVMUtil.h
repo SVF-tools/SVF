@@ -36,11 +36,7 @@
 #include "Util/Options.h"
 
 #include <llvm/Config/llvm-config.h>
-#if LLVM_VERSION_MAJOR < 16
-#include <llvm/ADT/Triple.h>
-#else
 #include <llvm/TargetParser/Triple.h>
-#endif
 
 namespace SVF
 {
@@ -143,20 +139,6 @@ inline bool isBlackholeSym(const Value* val)
 inline bool isNullPtrSym(const Value* val)
 {
     return SVFUtil::dyn_cast<ConstantPointerNull>(val);
-}
-
-static inline Type* getPtrElementType(const PointerType* pty)
-{
-#if (LLVM_VERSION_MAJOR < 14)
-    return pty->getPointerElementType();
-#elif (LLVM_VERSION_MAJOR < 17)
-    assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
-    return pty->getNonOpaquePointerElementType();
-#else
-    (void)pty; // Suppress warning of unused variable under release build
-    assert(false && "llvm version 17+ only support opaque pointers!");
-    return nullptr;
-#endif
 }
 
 /// Return size of this object based on LLVM value

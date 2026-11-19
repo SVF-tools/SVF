@@ -449,7 +449,7 @@ public:
     virtual void dump()
     {
         SVFUtil::outs() << "MR_" << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
-                        " = CHI(MR_" << this->getMR()->getMRID() << "V_" << opVer->getSSAVersion() << ") \t" <<
+                           " = CHI(MR_" << this->getMR()->getMRID() << "V_" << opVer->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
@@ -508,7 +508,7 @@ public:
     virtual void dump()
     {
         SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
-                        " = STCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
+                                                       " = STCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
@@ -567,7 +567,7 @@ public:
     virtual void dump()
     {
         SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
-                        " = CALCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
+                                                       " = CALCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
@@ -618,7 +618,7 @@ public:
     virtual void dump()
     {
         SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
-                        " = ENCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
+                                                       " = ENCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
@@ -709,7 +709,7 @@ public:
     virtual void dump()
     {
         SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
-                        " = PHI(";
+                                                       " = PHI(";
         for(OPVers::iterator it = opVers.begin(), eit = opVers.end(); it!=eit; ++it)
             SVFUtil::outs() << "MR_" << this->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
 

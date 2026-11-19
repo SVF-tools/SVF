@@ -34,7 +34,7 @@
 #include "Graphs/SVFG.h"
 #include <climits>
 #include <cmath>
-#include "SVFIR/SVFStatements.h"
+#include "SVFValues/SVFStatements.h"
 #include "Graphs/CallGraph.h"
 
 using namespace SVF;
@@ -60,8 +60,7 @@ void SaberCondAllocator::allocate()
 {
     DBOUT(DGENERAL, outs() << pasMsg("path condition allocation starts\n"));
 
-    const CallGraph* svfirCallGraph = PAG::getPAG()->getCallGraph();
-    for (const auto& item: *svfirCallGraph)
+    for (const auto& item: *(PAG::getPAG()->getCallGraph()))
     {
         const FunObjVar *func = (item.second)->getFunction();
         if (!SVFUtil::isExtCall(func))
@@ -554,7 +553,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
                 brCond = getEvalBrCond(bb, succ);
 
             DBOUT(DSaber, outs() << " bb (" << bb->getName() <<
-                  ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
+                                    ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
             Condition succPathCond = condAnd(cond, brCond);
             if (setCFCond(succ, condOr(getCFCond(succ), succPathCond)))
                 worklist.push(succ);
@@ -562,7 +561,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
     }
 
     DBOUT(DSaber, outs() << " src_bb (" << srcBB->getName() <<
-          ") --> " << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB)
+                            ") --> " << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB)
           << "\n");
 
     return getCFCond(dstBB);

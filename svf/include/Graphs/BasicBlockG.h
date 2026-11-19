@@ -70,7 +70,7 @@ typedef GenericNode<SVFBasicBlock, BasicBlockEdge> GenericBasicBlockNodeTy;
 class SVFBasicBlock : public GenericBasicBlockNodeTy
 {
     friend class LLVMModuleSet;
-    friend class SVFIRBuilder;
+    friend class PAGBuilder;
     friend class FunObjVar;
     friend class ICFGBuilder;
     friend class ICFG;

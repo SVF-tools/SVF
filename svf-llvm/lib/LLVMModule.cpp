@@ -45,9 +45,7 @@
 #include "Graphs/CallGraph.h"
 #include "Util/CallGraphBuilder.h"
 
-#if LLVM_VERSION_MAJOR > 16
 #include <llvm/Passes/PassBuilder.h>
-#endif
 
 using namespace std;
 using namespace SVF;
@@ -83,7 +81,7 @@ LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
-    : svfir(PAG::getPAG()), typeInference(new ObjTypeInference())
+    : pag(PAG::getPAG()), typeInference(new ObjTypeInference())
 {
 }
 
@@ -150,11 +148,11 @@ void LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec
 void LLVMModuleSet::buildSymbolTable() const
 {
     double startSymInfoTime = SVFStat::getClk(true);
-    if (!SVFIR::pagReadFromTXT())
+    if (!PAG::pagReadFromTXT())
     {
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableBuilder builder(svfir);
+        SymbolTableBuilder builder(pag);
         builder.buildMemModel();
     }
     double endSymInfoTime = SVFStat::getClk(true);
@@ -277,9 +275,6 @@ void LLVMModuleSet::prePassSchedule()
             Function &fun = *F;
             if (fun.isDeclaration())
                 continue;
-#if LLVM_VERSION_MAJOR <= 16
-            p2->runOnFunction(fun);
-#else
             llvm::PassBuilder PB;
             llvm::LoopAnalysisManager LAM;
             llvm::FunctionAnalysisManager FAM;
@@ -293,7 +288,6 @@ void LLVMModuleSet::prePassSchedule()
             llvm::FunctionPassManager FPM;
             FPM.addPass(llvm::UnifyFunctionExitNodesPass());
             FPM.run(fun, FAM);
-#endif
         }
     }
 }
@@ -322,7 +316,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
 
-    // We read SVFIR from LLVM IR
+    // We read PAG from LLVM IR
     if(Options::Graphtxt().empty())
     {
         if(moduleNameVec.empty())
@@ -332,10 +326,10 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         }
         //assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
     }
-    // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
+    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
     else
     {
-        SVFIR::setPagFromTXT(Options::Graphtxt());
+        PAG::setPagFromTXT(Options::Graphtxt());
     }
     //
     // LLVMContext objects separate global LLVM settings (from which e.g. types are
@@ -560,20 +554,12 @@ void LLVMModuleSet::addSVFMain()
         Type* ptr = PointerType::getUnqual(M.getContext());
         Type* i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
-#if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
                                        SVF_MAIN_FUNC_NAME,
                                        Type::getVoidTy(M.getContext()),
                                        i32,ptr,ptr
                                    );
         Function* svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
-#else
-        Function* svfmain = SVFUtil::dyn_cast<Function>(M.getOrInsertFunction(
-                                SVF_MAIN_FUNC_NAME,
-                                Type::getVoidTy(M.getContext()),
-                                i32,i8ptr2,i8ptr2
-                            ));
-#endif
         svfmain->setCallingConv(llvm::CallingConv::C);
         BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
         IRBuilder Builder(block);
@@ -749,8 +735,8 @@ void LLVMModuleSet::buildFunToFunMap()
             appModule = appFunToReplace->getParent();
         }
         Function* clonedFunction = Function::Create(extFunToClone->getFunctionType(),
-                Function::ExternalLinkage,
-                extFunToClone->getName());
+            Function::ExternalLinkage,
+            extFunToClone->getName());
         // Map the arguments of the new function to the arguments of extFunToClone
         llvm::ValueToValueMapTy valueMap;
         Function::arg_iterator destArg = clonedFunction->arg_begin();
@@ -1072,13 +1058,7 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 
         std::error_code EC;
         raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::OF_None);
-
-#if (LLVM_VERSION_MAJOR >= 7)
         WriteBitcodeToFile(mod, OS);
-#else
-        WriteBitcodeToFile(&mod, OS);
-#endif
-
         OS.flush();
     }
 }
@@ -1086,14 +1066,14 @@ void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 NodeID LLVMModuleSet::getValueNode(const Value *llvm_value)
 {
     if (SVFUtil::isa<ConstantPointerNull>(llvm_value))
-        return svfir->nullPtrSymID();
+        return pag->nullPtrSymID();
     else if (SVFUtil::isa<UndefValue>(llvm_value))
     {
         // For phi ptr [ @x, ... ], [ undef, ... ], keep @x without adding
         // a black-hole target. Integer and aggregate undef keep their model.
         if (Options::UndefAsNull() && llvm_value->getType()->isPointerTy())
-            return svfir->nullPtrSymID();
-        return svfir->blkPtrSymID();
+            return pag->nullPtrSymID();
+        return pag->blkPtrSymID();
     }
     else
     {
@@ -1290,10 +1270,10 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     {
         u32_t nf;
         stInfo = collectStructInfo(sty, nf);
-        if (nf > svfir->maxStSize)
+        if (nf > pag->maxStSize)
         {
-            svfir->maxStruct = getSVFType(sty);
-            svfir->maxStSize = nf;
+            pag->maxStruct = getSVFType(sty);
+            pag->maxStSize = nf;
         }
     }
     else
@@ -1301,7 +1281,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         stInfo = collectSimpleTypeInfo(T);
     }
     Type2TypeInfo.emplace(T, stInfo);
-    svfir->addStInfo(stInfo);
+    pag->addStInfo(stInfo);
     return stInfo;
 }
 
@@ -1373,7 +1353,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = ot;
     }
 
-    svfir->addTypeInfo(svftype);
+    pag->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
 
     return svftype;

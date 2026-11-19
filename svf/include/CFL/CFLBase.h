@@ -40,14 +40,14 @@ namespace SVF
 
 class CFLGraph;
 class CFLStat;
-class SVFIR;
+class PAG;
 
 /// CFL Client Base Class
 class CFLBase : public BVDataPTAImpl
 {
 
 public:
-    CFLBase(SVFIR* ir, PTATY pty) : BVDataPTAImpl(ir, pty), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLBase(PAG* pag, PTATY pty) : BVDataPTAImpl(pag, pty), pag(pag), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
 
@@ -103,7 +103,7 @@ public:
     //@}
 
 protected:
-    SVFIR* svfir;
+    PAG* pag;
     CFLGraph* graph;
     GrammarBase* grammarBase;
     CFGrammar* grammar;
