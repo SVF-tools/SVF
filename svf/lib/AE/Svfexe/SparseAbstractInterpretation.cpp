@@ -267,12 +267,12 @@ const ICFGNode* SemiSparseAbstractInterpretation::getICFGNode(
 {
     // const ValVars are all defined in global node
     if (!var->getICFGNode())
-{
-    return pag->getICFG()->getGlobalICFGNode();
+    {
+        return pag->getICFG()->getGlobalICFGNode();
     }
     // for return value of callsite, use the ret-site as def-site
     else if (SVFUtil::isa<CallICFGNode>(var->getICFGNode()) &&
-                 SVFUtil::isa<RetValPN>(var))
+             SVFUtil::isa<RetValPN>(var))
     {
         return SVFUtil::dyn_cast<CallICFGNode>(var->getICFGNode())
                ->getRetICFGNode();

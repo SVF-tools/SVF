@@ -206,9 +206,9 @@ SparseObjGraph::~SparseObjGraph() = default;
 bool SparseObjGraph::isBranch(const ICFGNode* node) const
 {
     // Only conditional intra-function ICFG edges count as branches.
-for (const ICFGEdge* out : node->getOutEdges())
-{
-    const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(out);
+    for (const ICFGEdge* out : node->getOutEdges())
+    {
+        const auto* intra = SVFUtil::dyn_cast<IntraCFGEdge>(out);
         if (intra && intra->getCondition())
             return true;
     }
@@ -218,7 +218,7 @@ for (const ICFGEdge* out : node->getOutEdges())
 bool SparseObjGraph::isControlBoundary(const ICFGNode* node) const
 {
     return isBranch(node) || SVFUtil::isa<CallICFGNode>(node) ||
-    SVFUtil::isa<RetICFGNode>(node);
+           SVFUtil::isa<RetICFGNode>(node);
 }
 
 void SparseObjGraph::addRoute(NodeID base, const ICFGNode* source,
