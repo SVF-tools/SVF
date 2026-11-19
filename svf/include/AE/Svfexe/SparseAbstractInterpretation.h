@@ -24,6 +24,7 @@
 #define INCLUDE_AE_SVFEXE_SPARSEABSTRACTINTERPRETATION_H_
 
 #include <memory>
+#include <optional>
 
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include "Graphs/SparseObjGraph.h"
@@ -69,6 +70,10 @@ protected:
 
     void updateAbsState(const ICFGNode* node, const AbstractState& state) override;
 
+    bool mergeStatesFromPredecessors(const ICFGNode* node) override;
+
+    void mergeSparseValVarsFromPredecessors(const ICFGNode* node, AbstractState& state) override;
+
     void joinStates(AbstractState& dst, const AbstractState& src) override;
 
     const ICFGNode* getICFGNode(const ValVar* var) const;
@@ -106,8 +111,7 @@ protected:
 
 private:
     void buildSVFG();
-    // Owns the original SVFG and the prebuilt packed-Obj route graph.
-    std::unique_ptr<SVFGBuilder> svfgBuilder;
+    // The prebuilt packed-Obj route graph; the SVFG is released once it is built.
     std::unique_ptr<SparseObjGraph> objRoutes;
 };
 

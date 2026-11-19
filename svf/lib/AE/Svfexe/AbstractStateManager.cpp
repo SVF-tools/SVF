@@ -313,9 +313,11 @@ IntervalValue AbstractInterpretation::getGepByteOffset(const GepStmt* gep)
     return res;
 }
 
-AddressValue AbstractInterpretation::getGepObjAddrs(const ValVar* pointer, IntervalValue offset)
+AddressValue AbstractInterpretation::getGepObjAddrs(const ICFGNode* node,
+        const ValVar* pointer, IntervalValue offset)
 {
-    const ICFGNode* node = pointer->getICFGNode();
+    // Read and update the state at the node being analysed, not at the
+    // pointer's definition: in sparse mode the definition may have no state.
     AddressValue gepAddrs;
     AbstractState& as = getAbsState(node);
     APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()

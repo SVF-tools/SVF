@@ -105,19 +105,18 @@ void BufOverflowDetector::detect(const ICFGNode* node)
                     IntervalValue accessOffset = getAccessOffset(objId, gep);
                     if (accessOffset.ub().getIntNumeral() >= size)
                     {
-                        AEException bug(stmt->toString());
-                        addBugToReporter(bug, stmt->getICFGNode(),
-                        {IntervalValue(lower, size), accessOffset});
+                        addBugToReporter(stmt->getICFGNode(),
+                        {IntervalValue(lower, size), accessOffset}, stmt);
                     }
                 }
                 // Some target has no known allocation size, so report one
                 // alarm with an unbounded size and the GEP's own byte offset.
                 if (hasUnknownSizeTarget)
-                    addBugToReporter(AEException(stmt->toString()), node,
+                    addBugToReporter(node,
                 {
                     IntervalValue(0, IntervalValue::plus_infinity()),
                     ae.getGepByteOffset(gep)
-                });
+                }, stmt);
             }
         }
     }
@@ -273,8 +272,7 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
             const ValVar* argVar = call->getArgument(arg.first);
             if (!canSafelyAccessMemory(argVar, offset, call, &info))
             {
-                AEException bug(call->toString());
-                addBugToReporter(bug, call, info);
+                addBugToReporter(call, info);
             }
         }
     }
@@ -293,8 +291,7 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
             const ValVar* argVar = call->getArgument(arg.first);
             if (!canSafelyAccessMemory(argVar, offset, call, &info))
             {
-                AEException bug(call->toString());
-                addBugToReporter(bug, call, info);
+                addBugToReporter(call, info);
             }
         }
     }
@@ -302,16 +299,14 @@ void BufOverflowDetector::detectExtAPI(const CallICFGNode* call)
     {
         if (!detectStrcpy(call, info))
         {
-            AEException bug(call->toString());
-            addBugToReporter(bug, call, info);
+            addBugToReporter(call, info);
         }
     }
     else if (extType == AbsExtAPI::STRCAT)
     {
         if (!detectStrcat(call, info))
         {
-            AEException bug(call->toString());
-            addBugToReporter(bug, call, info);
+            addBugToReporter(call, info);
         }
     }
     else
@@ -390,11 +385,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 {
                     // First-field and field-insensitive GEPs retain the base Obj.
                 }
-                else
-                {
-                    assert(pag->isNullOrBlkObj(gepObj) &&
-                           "GEP object is neither a GepObjVar nor an address without a backing object");
-                }
+                // Otherwise the GEP result is null/blackhole, or (with imprecise
+                // address sets) another base object: nothing to record.
             }
         }
         else if (SVFUtil::isa<GepObjVar>(obj))
@@ -427,11 +419,8 @@ void BufOverflowDetector::updateGepObjOffsetFromBase(const SVF::ICFGNode* node, 
                 {
                     // A collapsed field has no distinct GepObjVar offset to record.
                 }
-                else
-                {
-                    assert(pag->isNullOrBlkObj(gepObj) &&
-                           "GEP object is neither a GepObjVar nor an address without a backing object");
-                }
+                // Otherwise the GEP result is null/blackhole, or (with imprecise
+                // address sets) another base object: nothing to record.
             }
         }
     }
@@ -585,8 +574,7 @@ void NullptrDerefDetector::detect(const ICFGNode* node)
                 const ValVar* rhs = gep->getRHSVar();
                 if (!canSafelyDerefPtr(rhs, node))
                 {
-                    AEException bug(stmt->toString());
-                    addBugToReporter(bug, stmt->getICFGNode());
+                    addBugToReporter(stmt->getICFGNode(), stmt);
                 }
             }
             else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
@@ -596,8 +584,7 @@ void NullptrDerefDetector::detect(const ICFGNode* node)
                 const ValVar* lhs = load->getLHSVar();
                 if (!canSafelyDerefPtr(lhs, node))
                 {
-                    AEException bug(stmt->toString());
-                    addBugToReporter(bug, stmt->getICFGNode());
+                    addBugToReporter(stmt->getICFGNode(), stmt);
                 }
             }
         }
@@ -710,8 +697,7 @@ void NullptrDerefDetector::detectExtAPI(const CallICFGNode* call)
         const ValVar* argVal = call->getArgument(arg);
         if (argVal && !canSafelyDerefPtr(argVal, call))
         {
-            AEException bug(call->toString());
-            addBugToReporter(bug, call);
+            addBugToReporter(call);
         }
     }
 }

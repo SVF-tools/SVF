@@ -736,9 +736,8 @@ bool AbstractInterpretation::isBranchEdgeFeasible(const IntraCFGEdge* edge,
  * Handle an ICFG node: execute statements on the current abstract state.
  * The node's pre-state must already be in getAbsState(node) (set by
  * mergeStatesFromPredecessors, or by handleGlobalNode for the global node).
- * Returns true if the abstract state has changed, false if fixpoint reached or unreachable.
  */
-bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
+void AbstractInterpretation::handleICFGNode(const ICFGNode* node)
 {
     // Check reachability: pre-state must have been propagated by predecessors
     bool isFunEntry = SVFUtil::isa<FunEntryICFGNode>(node);
@@ -755,12 +754,9 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         }
         else
         {
-            return false;  // unreachable node
+            return;  // unreachable node
         }
     }
-
-    // Store the previous state for fixpoint detection
-    AbstractState prevState = getAbsState(node);
 
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
@@ -777,18 +773,17 @@ bool AbstractInterpretation::handleICFGNode(const ICFGNode* node)
         handleCallSite(callNode);
     }
 
-    // Run detectors
-    for (auto& detector: detectors)
-        detector->detect(node);
+    runDetectors(node);
     stat->countStateSize();
 
     // Track this node as analyzed (for coverage statistics across all entry points)
     allAnalyzedNodes.insert(node);
+}
 
-    if (getAbsState(node) == prevState)
-        return false;
-
-    return true;
+void AbstractInterpretation::runDetectors(const ICFGNode* node)
+{
+    for (auto& detector: detectors)
+        detector->detect(node);
 }
 
 /**
@@ -808,18 +803,74 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     while (!worklist.empty())
     {
         const ICFGWTOComp* comp = worklist.pop();
+        // A top-level component (a node, or a whole cycle) is skipped when
+        // its input is covered by its input at the previous iteration:
+        // abstractTrace holds results for that input, which cover this one.
+        if (!isInputCoveredByPreIteration(comp))
+            handleWTOComponent(comp, caller);
+    }
+}
 
-        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+bool AbstractInterpretation::isInputCoveredByPreIteration(const ICFGWTOComp* comp)
+{
+    // The nodes of comp: a node, or all nodes of a cycle.
+    Set<const ICFGNode*> nodes;
+    std::vector<const ICFGWTOComp*> todo{comp};
+    while (!todo.empty())
+    {
+        const ICFGWTOComp* c = todo.back();
+        todo.pop_back();
+        if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(c))
+            nodes.insert(singleton->getICFGNode());
+        else
         {
-            const ICFGNode* node = singleton->getICFGNode();
-            if (mergeStatesFromPredecessors(node))
-                handleICFGNode(node);
+            const ICFGCycleWTO* cycle = SVFUtil::cast<ICFGCycleWTO>(c);
+            nodes.insert(cycle->head()->getICFGNode());
+            for (const ICFGWTOComp* sub : cycle->getWTOComponents())
+                todo.push_back(sub);
         }
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
-        {
-            if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
-                handleLoopOrRecursion(cycle, caller);
-        }
+    }
+    const ICFGNode* head = SVFUtil::isa<ICFGSingletonWTO>(comp)
+                           ? SVFUtil::cast<ICFGSingletonWTO>(comp)->getICFGNode()
+                           : SVFUtil::cast<ICFGCycleWTO>(comp)->head()->getICFGNode();
+
+    // Input: head merged from its predecessors (head's state is put back).
+    const bool had = hasAbsState(head);
+    const AbstractState output = had ? getAbsState(head) : AbstractState();
+    const bool reachable = mergeStatesFromPredecessors(head);
+    AbstractState input = reachable ? getAbsState(head) : AbstractState();
+    if (had)
+        abstractTrace[head] = output;
+    else
+        abstractTrace.erase(head);
+    if (!reachable)
+        return false;
+    // A cycle's other nodes also read ValVars, which in the sparse modes are
+    // not carried to its head.
+    for (const ICFGNode* node : nodes)
+        if (node != head)
+            mergeSparseValVarsFromPredecessors(node, input);
+
+    const auto pre = preIterationInputs.find(head);
+    if (pre != preIterationInputs.end() && pre->second >= input)
+        return true;
+    preIterationInputs[head] = std::move(input);
+    return false;
+}
+
+void AbstractInterpretation::handleWTOComponent(const ICFGWTOComp* comp,
+        const CallICFGNode* caller)
+{
+    if (const ICFGSingletonWTO* singleton = SVFUtil::dyn_cast<ICFGSingletonWTO>(comp))
+    {
+        const ICFGNode* node = singleton->getICFGNode();
+        if (mergeStatesFromPredecessors(node))
+            handleICFGNode(node);
+    }
+    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(comp))
+    {
+        if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
+            handleLoopOrRecursion(cycle, caller);
     }
 }
 
@@ -915,6 +966,10 @@ void AbstractInterpretation::handleFunCall(const CallICFGNode *callNode)
         {
             if (callee->isDeclaration())
                 continue;
+            // A recursive back edge through a function pointer: the SCC is
+            // analysed by the cycle that contains this call, as for direct calls.
+            if (isRecursiveFun(callee) && isRecursiveCallSite(callNode, callee))
+                continue;
             const ICFGNode* calleeEntry = icfg->getFunEntryICFGNode(callee);
             handleFunction(calleeEntry, callNode);
         }
@@ -999,7 +1054,7 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
     const ICFGNode* node = gep->getICFGNode();
     IntervalValue offsetPair = getGepElementIndex(gep);
-    AddressValue gepAddrs = getGepObjAddrs(SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
+    AddressValue gepAddrs = getGepObjAddrs(node, SVFUtil::cast<ValVar>(gep->getRHSVar()), offsetPair);
     updateAbsValue(gep->getLHSVar(), gepAddrs, node);
 }
 
