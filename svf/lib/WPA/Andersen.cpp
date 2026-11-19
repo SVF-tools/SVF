@@ -580,8 +580,8 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     // SCC merging can choose a non-pointer object as the representative of
     // pointer values. Its original type must not discard inherited constraints.
     if (pag->isConstantObj(node) ||
-        (!pag->getSVFVar(load->getDstID())->isPointer() &&
-         sccSubNodes(load->getDstID()).isSingleElement()))
+            (!pag->getSVFVar(load->getDstID())->isPointer() &&
+             sccSubNodes(load->getDstID()).isSingleElement()))
         return false;
 
     numOfProcessedLoad++;
@@ -604,8 +604,8 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     // SCC merging can choose a non-pointer object as the representative of
     // pointer values. Its original type must not discard inherited constraints.
     if (pag->isConstantObj(node) ||
-        (!pag->getSVFVar(store->getSrcID())->isPointer() &&
-         sccSubNodes(store->getSrcID()).isSingleElement()))
+            (!pag->getSVFVar(store->getSrcID())->isPointer() &&
+             sccSubNodes(store->getSrcID()).isSingleElement()))
         return false;
 
     numOfProcessedStore++;
