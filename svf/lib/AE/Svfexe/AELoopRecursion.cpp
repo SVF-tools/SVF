@@ -247,8 +247,8 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
     // Iterate until fixpoint with widening/narrowing on the cycle head.
     bool increasing = true;
     u32_t widen_delay = Options::WidenDelay();
-    AbstractState previous;
-    bool hasPrevious = false;
+    AbstractState preIterationHeadState;
+    bool hasPreIteration = false;
     for (u32_t cur_iter = 0;; cur_iter++)
     {
         if (mergeStatesFromPredecessors(cycle_head))
@@ -259,22 +259,22 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         // change to a body-defined value (for example, a secondary PHI) is
         // visible to the fixpoint check at the next head visit.
         AbstractState current = getFullCycleHeadState(cycle);
-        if (!hasPrevious)
+        if (!hasPreIteration)
         {
             // Seed the comparison only after the head has been evaluated.
             // This also guarantees one complete body traversal when
             // -widen-delay=0.
-            previous = current;
-            hasPrevious = true;
+            preIterationHeadState = current;
+            hasPreIteration = true;
         }
         else if (cur_iter < widen_delay)
         {
-            previous = current;
+            preIterationHeadState = current;
         }
         else if (increasing)
         {
-            const bool fixpoint = widenCycleState(previous, current, cycle);
-            previous = getFullCycleHeadState(cycle);
+            const bool fixpoint = widenCycleState(preIterationHeadState, current, cycle);
+            preIterationHeadState = getFullCycleHeadState(cycle);
             if (fixpoint)
             {
                 // Propagate the final widened state through the body once
@@ -285,10 +285,10 @@ void AbstractInterpretation::handleLoopOrRecursion(const ICFGCycleWTO* cycle, co
         }
         else
         {
-            const bool fixpoint = narrowCycleState(previous, current, cycle);
+            const bool fixpoint = narrowCycleState(preIterationHeadState, current, cycle);
             if (fixpoint)
                 break;
-            previous = getFullCycleHeadState(cycle);
+            preIterationHeadState = getFullCycleHeadState(cycle);
         }
 
         // Process cycle body components (each with gated merge+handle)

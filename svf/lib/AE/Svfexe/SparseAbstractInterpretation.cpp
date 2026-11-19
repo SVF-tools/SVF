@@ -82,14 +82,14 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
     const ICFGNode* node)
 {
     const auto& graphEdges = objRoutes->getInputs(node);
-    AbstractState previous;
-    bool hasPrevious = false;
+    AbstractState preIterationState;
+    bool hasPreIteration = false;
     for (const SparseObjGraph::Edge* edge : graphEdges)
     {
         if (edge->getSrcNode()->getICFGNode() == node && hasAbsState(node))
         {
-            previous = getAbsState(node);
-            hasPrevious = true;
+            preIterationState = getAbsState(node);
+            hasPreIteration = true;
             break;
         }
     }
@@ -104,7 +104,7 @@ bool FullSparseAbstractInterpretation::mergeStatesFromPredecessors(
             const SparseObjGraph::Node* sourceNode = edge->getSrcNode();
             const ICFGNode* source = sourceNode->getICFGNode();
             const AbstractState* sourceState = source == node
-                                               ? (hasPrevious ? &previous : nullptr)
+                                               ? (hasPreIteration ? &preIterationState : nullptr)
                                                : (hasAbsState(source)
                                                   ? &getAbsState(source) : nullptr);
             if (!sourceState)

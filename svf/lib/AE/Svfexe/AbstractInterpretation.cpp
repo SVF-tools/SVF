@@ -804,14 +804,14 @@ void AbstractInterpretation::handleFunction(const ICFGNode* funEntry, const Call
     {
         const ICFGWTOComp* comp = worklist.pop();
         // A top-level component (a node, or a whole cycle) is skipped when
-        // its input is contained in the one it last ran with: abstractTrace
-        // holds results for that input, which cover this one.
-        if (!isCoveredByPreState(comp))
+        // its input is covered by its input at the previous iteration:
+        // abstractTrace holds results for that input, which cover this one.
+        if (!isInputCoveredByPreIteration(comp))
             handleWTOComponent(comp, caller);
     }
 }
 
-bool AbstractInterpretation::isCoveredByPreState(const ICFGWTOComp* comp)
+bool AbstractInterpretation::isInputCoveredByPreIteration(const ICFGWTOComp* comp)
 {
     // The nodes of comp: a node, or all nodes of a cycle.
     Set<const ICFGNode*> nodes;
@@ -851,10 +851,10 @@ bool AbstractInterpretation::isCoveredByPreState(const ICFGWTOComp* comp)
         if (node != head)
             mergeSparseValVarsFromPredecessors(node, input);
 
-    const auto pre = preStates.find(head);
-    if (pre != preStates.end() && pre->second >= input)
+    const auto pre = preIterationInputs.find(head);
+    if (pre != preIterationInputs.end() && pre->second >= input)
         return true;
-    preStates[head] = std::move(input);
+    preIterationInputs[head] = std::move(input);
     return false;
 }
 
