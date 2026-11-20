@@ -48,7 +48,7 @@ AEWTO::~AEWTO()
         delete wto;
 }
 
-void AEWTO::initWTO()
+void AEWTO::initWTO(const FunObjVar* userEntry)
 {
     callGraphSCC->find();
 
@@ -111,6 +111,19 @@ void AEWTO::initWTO()
         }
     }
 
+    if (const FunObjVar* entry = userEntry)
+    {
+        if (!funcToWTO.count(entry))
+        {
+            const NodeID rep = callGraphSCC->repNode(callGraph->getCallGraphNode(entry)->getId());
+            Set<const FunObjVar*> funcScc;
+            for (NodeID id : callGraphSCC->subNodes(rep))
+                funcScc.insert(callGraph->getGNode(id)->getFunction());
+            ICFGWTO* iwto = new ICFGWTO(icfg->getFunEntryICFGNode(entry), funcScc);
+            iwto->init();
+            funcToWTO[entry] = iwto;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
