@@ -35,6 +35,7 @@
 #include "AE/Core/RelationSolver.h"
 #include "AE/Svfexe/AbstractInterpretation.h"
 #include <chrono>
+#include <limits>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -630,6 +631,76 @@ public:
 
     ~AETest() = default;
 
+    void testBoundedIntBoundaryArithmetic()
+    {
+        const s64_t intMin = std::numeric_limits<s64_t>::min();
+        const s64_t intMax = std::numeric_limits<s64_t>::max();
+
+        const BoundedInt minValue(intMin);
+        const BoundedInt maxValue(intMax);
+        const BoundedInt zero(0);
+        const BoundedInt one(1);
+        const BoundedInt minusOne(-1);
+
+        // Negation.
+        assert((-minValue).is_plus_infinity());
+        assert(abs(minValue).is_plus_infinity());
+
+        // Addition: preserve exact INT64_MIN and abstract true overflow.
+        assert((minusOne + BoundedInt(-intMax)).equal(minValue));
+        assert((maxValue + one).is_plus_infinity());
+        assert((minValue + minusOne).is_minus_infinity());
+
+        // Subtraction must not negate the right-hand operand first.
+        assert((minValue - minValue).equal(zero));
+        assert((maxValue - maxValue).equal(zero));
+        assert((maxValue - minValue).is_plus_infinity());
+        assert((minValue - maxValue).is_minus_infinity());
+
+        // Multiplication: exercise both operand orders at INT64_MIN.
+        assert((one * minValue).equal(minValue));
+        assert((minValue * one).equal(minValue));
+        assert((minusOne * minValue).is_plus_infinity());
+        assert((BoundedInt::minus_infinity() * minValue).is_plus_infinity());
+
+        // Division and remainder have one overflowing finite input pair.
+        assert((minValue / one).equal(minValue));
+        assert((minValue / minusOne).is_plus_infinity());
+        assert((minValue % minusOne).equal(zero));
+    }
+
+    void testIntervalBoundaryArithmetic()
+    {
+        const s64_t intMin = std::numeric_limits<s64_t>::min();
+        const s64_t intMax = std::numeric_limits<s64_t>::max();
+        const IntervalValue fullRange(intMin, intMax);
+
+        // Regression for #1961:
+        // 1 - [INT64_MIN, INT64_MAX] = [INT64_MIN + 2, +inf].
+        const IntervalValue issueResult = IntervalValue(1) - fullRange;
+        const IntervalValue issueExpected(BoundedInt(intMin + 2),
+                                          BoundedInt::plus_infinity());
+        assert(issueResult.equals(issueExpected));
+
+        // Exercise the opposite subtraction direction and both overflows.
+        const IntervalValue reverseResult = fullRange - IntervalValue(1);
+        const IntervalValue reverseExpected(BoundedInt::minus_infinity(),
+                                            BoundedInt(intMax - 1));
+        assert(reverseResult.equals(reverseExpected));
+        assert((fullRange - fullRange).equals(IntervalValue::top()));
+
+        // Exact INT64_MIN results must remain finite.
+        assert((IntervalValue(-1) + IntervalValue(-intMax))
+               .equals(IntervalValue(intMin)));
+        assert((IntervalValue(1) * fullRange).equals(fullRange));
+
+        // Propagate division and remainder boundary behavior through intervals.
+        assert((IntervalValue(intMin) / IntervalValue(-1))
+               .equals(IntervalValue(BoundedInt::plus_infinity())));
+        assert((IntervalValue(intMin) % IntervalValue(-1))
+               .equals(IntervalValue(0)));
+    }
+
     void testBinaryOpStmt()
     {
         // test division /
@@ -881,6 +952,8 @@ int main(int argc, char** argv)
     if (AETEST())
     {
         AETest aeTest;
+        aeTest.testBoundedIntBoundaryArithmetic();
+        aeTest.testIntervalBoundaryArithmetic();
         aeTest.testBinaryOpStmt();
         aeTest.testAbsState();
         return 0;
