@@ -107,10 +107,15 @@ jobs:
         run:
           ctest -R double_free -VV
 
-      - name: ctest ae_symabs
+      - name: ctest ae internal symabs
         working-directory: ${{github.workspace}}/Release-build
         run:
           ctest -R symabs -VV
+
+      - name: ctest ae internal basic tests
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R aetest -VV
 
       - name: ctest ae_assert
         working-directory: ${{github.workspace}}/Release-build
