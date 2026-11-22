@@ -527,7 +527,9 @@ private:
     /// Set the lower bound
     void setValue(const BoundedInt &lb, const BoundedInt &ub)
     {
-        assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
+        assert(((lb.is_plus_infinity() && ub.is_minus_infinity()) ||
+                lb.leq(ub)) &&
+               "lower bound should be less than or equal to upper bound");
         this->_lb = lb;
         this->_ub = ub;
     }

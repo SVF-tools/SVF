@@ -35,6 +35,8 @@
 
 #include <cfloat> // For DBL_MAX
 #include <cmath>
+#include <cstdlib>
+#include <limits>
 #include <utility>
 
 #include "Util/GeneralType.h"
@@ -50,14 +52,14 @@ namespace SVF
  * represent positive and negative infinity. It includes a 64-bit integer
  * value and a boolean flag indicating whether the value is infinite.
  * If the value is infinite, the integer value is used to represent the sign
- * of infinity (1 for positive infinity and 0 for negative infinity).
+ * of infinity (1 for positive infinity and -1 for negative infinity).
  */
 class BoundedInt
 {
 protected:
     s64_t _iVal; // The 64-bit integer value.
     bool _isInf; // True if the value is infinite. If true, _iVal == 1
-    // represents positive infinity and _iVal == 0 represents
+    // represents positive infinity and _iVal == -1 represents
     // negative infinity.
 
     // Default constructor is protected to prevent creating an object without
@@ -255,210 +257,184 @@ public:
     }
 
     /**
-     * Safely adds two BoundedInt objects.
+     * Integer arithmetic policy for finite BoundedInt operands.
      *
-     * This function adds two BoundedInt objects in a way that respects the
-     * bounds of the underlying s64_t type. It checks for conditions that would
-     * result in overflow or underflow and returns a representation of positive
-     * or negative infinity in those cases. If addition of the two numbers would
-     * result in a value that is within the representable range of s64_t, it
-     * performs the addition and returns the result. If the addition is not
-     * defined (e.g., positive infinity plus negative infinity), it asserts
-     * false to indicate an error.
+     * Representable results remain exact. Results outside the s64_t range are
+     * abstracted to positive or negative infinity. Arithmetic must never rely
+     * on signed wraparound or trigger C++ undefined behavior.
      *
-     * @param lhs The first BoundedInt to add. This can be any valid BoundedInt,
-     * including positive and negative infinity.
-     * @param rhs The second BoundedInt to add. This can be any valid
-     * BoundedInt, including positive and negative infinity.
-     * @return A BoundedInt that represents the result of the addition. If the
-     * addition would result in overflow, the function returns a BoundedInt
-     * representing positive infinity. If the addition would result in
-     * underflow, the function returns a BoundedInt representing negative
-     * infinity. If the addition is not defined (e.g., positive infinity plus
-     * negative infinity), the function asserts false and does not return a
-     * value.
+     * | Operation | Exceptional case   | Result  |
+     * |-----------|--------------------|---------|
+     * | -x        | x == INT64_MIN     | +inf    |
+     * | a + b     | result > INT64_MAX | +inf    |
+     * | a + b     | result < INT64_MIN | -inf    |
+     * | a - b     | result > INT64_MAX | +inf    |
+     * | a - b     | result < INT64_MIN | -inf    |
+     * | a * b     | positive overflow  | +inf    |
+     * | a * b     | negative overflow  | -inf    |
+     * | a / b     | INT64_MIN / -1     | +inf    |
+     * | a / b     | b == 0             | invalid |
+     * | a % b     | INT64_MIN % -1     | 0       |
+     * | a % b     | b == 0             | invalid |
+     *
+     * Operations involving abstract infinities are handled separately by each
+     * helper according to the signs of the operands.
      */
+    static BoundedInt safeNeg(const BoundedInt& value)
+    {
+        if (value.is_plus_infinity())
+            return minus_infinity();
+        if (value.is_minus_infinity())
+            return plus_infinity();
+        if (value._iVal == std::numeric_limits<s64_t>::min())
+            return plus_infinity();
+        return -value._iVal;
+    }
+
     static BoundedInt safeAdd(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        // If one number is positive infinity and the other is negative
-        // infinity, this is an invalid operation, so we assert false.
         if ((lhs.is_plus_infinity() && rhs.is_minus_infinity()) ||
                 (lhs.is_minus_infinity() && rhs.is_plus_infinity()))
         {
             assert(false && "invalid add");
+            abort();
         }
-
-        // If either number is positive infinity, the result is positive
-        // infinity.
         if (lhs.is_plus_infinity() || rhs.is_plus_infinity())
-        {
             return plus_infinity();
-        }
-
-        // If either number is negative infinity, the result is negative
-        // infinity.
         if (lhs.is_minus_infinity() || rhs.is_minus_infinity())
-        {
             return minus_infinity();
-        }
 
-        // If both numbers are positive and their sum would exceed the maximum
-        // representable number, the result is positive infinity.
-        if (lhs._iVal > 0 && rhs._iVal > 0 &&
-                (std::numeric_limits<s64_t>::max() - lhs._iVal) < rhs._iVal)
-        {
+        const s64_t min = std::numeric_limits<s64_t>::min();
+        const s64_t max = std::numeric_limits<s64_t>::max();
+        if (rhs._iVal > 0 && lhs._iVal > max - rhs._iVal)
             return plus_infinity();
-        }
-
-        // If both numbers are negative and their sum would be less than the
-        // most negative representable number, the result is negative infinity.
-        if (lhs._iVal < 0 && rhs._iVal < 0 &&
-                (-std::numeric_limits<s64_t>::max() - lhs._iVal) > rhs._iVal)
-        {
+        if (rhs._iVal < 0 && lhs._iVal < min - rhs._iVal)
             return minus_infinity();
-        }
-
-        // If none of the above conditions are met, the numbers can be safely
-        // added.
         return lhs._iVal + rhs._iVal;
     }
 
-    // Overloads the addition operator to safely add two BoundedInt objects.
-    // Utilizes the safeAdd method to handle potential overflow and underflow.
-    friend BoundedInt operator+(const BoundedInt& lhs, const BoundedInt& rhs)
+    static BoundedInt safeSub(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        return safeAdd(lhs, rhs);
+        if ((lhs.is_plus_infinity() && rhs.is_plus_infinity()) ||
+                (lhs.is_minus_infinity() && rhs.is_minus_infinity()))
+        {
+            assert(false && "invalid subtract");
+            abort();
+        }
+        if (lhs.is_plus_infinity() || rhs.is_minus_infinity())
+            return plus_infinity();
+        if (lhs.is_minus_infinity() || rhs.is_plus_infinity())
+            return minus_infinity();
+
+        const s64_t min = std::numeric_limits<s64_t>::min();
+        const s64_t max = std::numeric_limits<s64_t>::max();
+        if (rhs._iVal < 0 && lhs._iVal > max + rhs._iVal)
+            return plus_infinity();
+        if (rhs._iVal > 0 && lhs._iVal < min + rhs._iVal)
+            return minus_infinity();
+        return lhs._iVal - rhs._iVal;
     }
 
-    // Overloads the unary minus operator to negate a BoundedInt object.
-    // The operation simply negates the internal integer value.
-    friend BoundedInt operator-(const BoundedInt& lhs)
-    {
-        return {-lhs._iVal, lhs._isInf};
-    }
-
-    // Overloads the subtraction operator to safely subtract one BoundedInt
-    // object from another. This is implemented as the addition of the lhs and
-    // the negation of the rhs, using the safeAdd method for safety.
-    friend BoundedInt operator-(const BoundedInt& lhs, const BoundedInt& rhs)
-    {
-        return safeAdd(lhs, -rhs);
-    }
-
-    /**
-     * @brief Performs safe multiplication of two BoundedInt objects.
-     *
-     * This function ensures that the multiplication of two BoundedInt objects
-     * doesn't result in overflow or underflow. It returns the multiplication
-     * result if it can be represented within the range of a 64-bit integer. If
-     * the result would be larger than the maximum representable positive
-     * number, it returns positive infinity. If the result would be less than
-     * the minimum representable negative number, it returns negative infinity.
-     * If either of the inputs is zero, the result is zero. If either of the
-     * inputs is infinity, the result is determined by the signs of the inputs.
-     *
-     * @param lhs The first BoundedInt to multiply.
-     * @param rhs The second BoundedInt to multiply.
-     * @return The result of the multiplication, or positive/negative infinity
-     * if the result would be outside the range of a 64-bit integer.
-     */
     static BoundedInt safeMul(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        // If either number is zero, the result is zero.
-        if (lhs._iVal == 0 || rhs._iVal == 0)
+        if (lhs.is_zero() || rhs.is_zero())
             return 0;
 
-        // If either number is infinity, the result depends on the signs of the
-        // numbers.
         if (lhs.is_infinity() || rhs.is_infinity())
         {
-            // If the signs of the numbers are the same, the result is positive
-            // infinity. If the signs of the numbers are different, the result
-            // is negative infinity.
-            if (lhs._iVal * rhs._iVal > 0)
-            {
+            const bool negative = (lhs._iVal < 0) != (rhs._iVal < 0);
+            return negative ? minus_infinity() : plus_infinity();
+        }
+
+        const s64_t min = std::numeric_limits<s64_t>::min();
+        const s64_t max = std::numeric_limits<s64_t>::max();
+        if (lhs._iVal > 0)
+        {
+            if (rhs._iVal > 0 && lhs._iVal > max / rhs._iVal)
                 return plus_infinity();
-            }
-            else
-            {
+            if (rhs._iVal < 0 && rhs._iVal < min / lhs._iVal)
                 return minus_infinity();
-            }
         }
-
-        // If both numbers are positive and their product would exceed the
-        // maximum representable number, the result is positive infinity.
-        if (lhs._iVal > 0 && rhs._iVal > 0 &&
-                (std::numeric_limits<s64_t>::max() / lhs._iVal) < rhs._iVal)
+        else
         {
-            return plus_infinity();
+            if (rhs._iVal > 0 && lhs._iVal < min / rhs._iVal)
+                return minus_infinity();
+            if (rhs._iVal < 0 && lhs._iVal < max / rhs._iVal)
+                return plus_infinity();
         }
-
-        // If both numbers are negative and their product would exceed the
-        // maximum representable number, the result is positive infinity.
-        if (lhs._iVal < 0 && rhs._iVal < 0 &&
-                (std::numeric_limits<s64_t>::max() / lhs._iVal) > rhs._iVal)
-        {
-            return plus_infinity();
-        }
-
-        // If one number is positive and the other is negative and their product
-        // would be less than the most negative representable number, the result
-        // is negative infinity.
-        if ((lhs._iVal > 0 && rhs._iVal < 0 &&
-                (-std::numeric_limits<s64_t>::max() / lhs._iVal) > rhs._iVal) ||
-                (lhs._iVal < 0 && rhs._iVal > 0 &&
-                 (-std::numeric_limits<s64_t>::max() / rhs._iVal) > lhs._iVal))
-        {
-            return minus_infinity();
-        }
-
-        // If none of the above conditions are met, the numbers can be safely
-        // multiplied.
         return lhs._iVal * rhs._iVal;
     }
 
-
-    friend BoundedInt operator%(const BoundedInt& lhs, const BoundedInt& rhs)
-    {
-        if (rhs.is_zero())
-            assert(false && "divide by zero");
-        else if (!lhs.is_infinity() && !rhs.is_infinity())
-            return lhs._iVal % rhs._iVal;
-        else if (!lhs.is_infinity() && rhs.is_infinity())
-            return 0;
-        // TODO: not sure
-        else if (lhs.is_infinity() && !rhs.is_infinity())
-            return ite(rhs._iVal > 0, lhs, -lhs);
-        else
-            // TODO: +oo/-oo L'Hôpital's rule?
-            return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
-        abort();
-    }
-    // Overloads the multiplication operator to safely multiply two BoundedInt
-    // objects. Utilizes the safeMul method to handle potential overflow.
-    friend BoundedInt operator*(const BoundedInt& lhs, const BoundedInt& rhs)
-    {
-        return safeMul(lhs, rhs);
-    }
-
-    // Overloads the division operator to safely divide a BoundedInt object by
-    // another. Utilizes the safeDiv method to handle potential division by zero
-    // and overflow.
-    friend BoundedInt operator/(const BoundedInt& lhs, const BoundedInt& rhs)
+    static BoundedInt safeDiv(const BoundedInt& lhs, const BoundedInt& rhs)
     {
         if (rhs.is_zero())
         {
             assert(false && "divide by zero");
             abort();
         }
-        else if (!lhs.is_infinity() && !rhs.is_infinity())
+        if (!lhs.is_infinity() && !rhs.is_infinity())
+        {
+            if (lhs._iVal == std::numeric_limits<s64_t>::min() &&
+                    rhs._iVal == -1)
+                return plus_infinity();
             return lhs._iVal / rhs._iVal;
-        else if (!lhs.is_infinity() && rhs.is_infinity())
+        }
+        if (!lhs.is_infinity())
             return 0;
-        else if (lhs.is_infinity() && !rhs.is_infinity())
-            return ite(rhs._iVal >= 0, lhs, -lhs);
-        else
-            return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
+
+        const bool negative = (lhs._iVal < 0) != (rhs._iVal < 0);
+        return negative ? minus_infinity() : plus_infinity();
+    }
+
+    static BoundedInt safeRem(const BoundedInt& lhs, const BoundedInt& rhs)
+    {
+        if (rhs.is_zero())
+        {
+            assert(false && "divide by zero");
+            abort();
+        }
+        if (!lhs.is_infinity() && !rhs.is_infinity())
+        {
+            if (lhs._iVal == std::numeric_limits<s64_t>::min() &&
+                    rhs._iVal == -1)
+                return 0;
+            return lhs._iVal % rhs._iVal;
+        }
+        if (!lhs.is_infinity())
+            return 0;
+        if (!rhs.is_infinity())
+            return rhs._iVal > 0 ? lhs : safeNeg(lhs);
+        return lhs.equal(rhs) ? plus_infinity() : minus_infinity();
+    }
+
+    friend BoundedInt operator-(const BoundedInt& value)
+    {
+        return safeNeg(value);
+    }
+
+    friend BoundedInt operator+(const BoundedInt& lhs, const BoundedInt& rhs)
+    {
+        return safeAdd(lhs, rhs);
+    }
+
+    friend BoundedInt operator-(const BoundedInt& lhs, const BoundedInt& rhs)
+    {
+        return safeSub(lhs, rhs);
+    }
+
+    friend BoundedInt operator*(const BoundedInt& lhs, const BoundedInt& rhs)
+    {
+        return safeMul(lhs, rhs);
+    }
+
+    friend BoundedInt operator/(const BoundedInt& lhs, const BoundedInt& rhs)
+    {
+        return safeDiv(lhs, rhs);
+    }
+
+    friend BoundedInt operator%(const BoundedInt& lhs, const BoundedInt& rhs)
+    {
+        return safeRem(lhs, rhs);
     }
 
     // Overload bitwise operators for BoundedInt objects. These operators
