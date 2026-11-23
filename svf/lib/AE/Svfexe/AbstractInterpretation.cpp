@@ -1323,8 +1323,14 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
     const ICFGNode* node = cmp->getICFGNode();
     const AbstractValue& lhsValue = getAbsValue(cmp->getOpVar(0), node);
     const AbstractValue& rhsValue = getAbsValue(cmp->getOpVar(1), node);
-    const bool pointerCmp = cmp->getOpVar(0)->getType()->isPointerTy();
-    assert(pointerCmp == cmp->getOpVar(1)->getType()->isPointerTy() &&
+    const NodeID blkPtr = PAG::getPAG()->getBlkPtr();
+    const bool lhsIsBlkPtr = cmp->getOpVar(0)->getId() == blkPtr;
+    const bool rhsIsBlkPtr = cmp->getOpVar(1)->getId() == blkPtr;
+    // Undef and poison share the pointer-typed BlkPtr node, which is unknown in both domains.
+    // Use the other operand's type when available. Two BlkPtrs give [0, 1] in either domain.
+    const bool pointerCmp = cmp->getOpVar(lhsIsBlkPtr ? 1 : 0)->getType()->isPointerTy();
+    assert((lhsIsBlkPtr || rhsIsBlkPtr ||
+            pointerCmp == cmp->getOpVar(1)->getType()->isPointerTy()) &&
            "CmpStmt operands must belong to the same value domain");
 
     IntervalValue result;
