@@ -94,21 +94,22 @@ void BufferOverflowBug::printBugToTerminal() const
         return std::to_string(value.getNumeral());
     };
     stringstream bugInfo;
+    SVFUtil::errs() << "\n";
     if(FullBufferOverflowBug::classof(this))
     {
-        SVFUtil::errs() << SVFUtil::bugMsg1("\t Full Overflow :") <<  " accessing at : ("
+        SVFUtil::errs() << SVFUtil::bugMsg1("Full Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
 
     }
     else
     {
-        SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") <<  " accessing at : ("
+        SVFUtil::errs() << SVFUtil::bugMsg1("Partial Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
     }
-    bugInfo << "\t\t  allocate size : [" << endpoint(allocLowerBound) << ", " << endpoint(allocUpperBound) << "], ";
+    bugInfo << "    allocate size : [" << endpoint(allocLowerBound) << ", " << endpoint(allocUpperBound) << "], ";
     bugInfo << "access size : [" << endpoint(accessLowerBound) << ", " << endpoint(accessUpperBound) << "]\n";
-    SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
-    SVFUtil::errs() << "\t\t Events : \n";
+    SVFUtil::errs() << "  Info :\n" << bugInfo.str();
+    SVFUtil::errs() << "  Events :\n";
 
     for(auto event : bugEventStack)
     {
@@ -116,7 +117,7 @@ void BufferOverflowBug::printBugToTerminal() const
         {
         case SVFBugEvent::CallSite:
         {
-            SVFUtil::errs() << "\t\t  callsite at : ( " << event.getEventLoc() << " )\n";
+            SVFUtil::errs() << "    callsite at : ( " << event.getEventLoc() << " )\n";
             break;
         }
         default:
@@ -273,7 +274,7 @@ cJSON *FullNullPtrDereferenceBug::getBugDescription() const
 
 void FullNullPtrDereferenceBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t FullNullPtrDereference :") <<  " dereference at : ("
+    SVFUtil::errs() << "\n" << SVFUtil::bugMsg2("FullNullPtrDereference :") <<  " dereference at : ("
                     << GenericBug::getLoc() << ")\n";
 }
 
@@ -285,7 +286,7 @@ cJSON *PartialNullPtrDereferenceBug::getBugDescription() const
 
 void PartialNullPtrDereferenceBug::printBugToTerminal() const
 {
-    SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialNullPtrDereference :") <<  " dereference at : ("
+    SVFUtil::errs() << "\n" << SVFUtil::bugMsg2("PartialNullPtrDereference :") <<  " dereference at : ("
                     << GenericBug::getLoc() << ")\n";
 }
 
