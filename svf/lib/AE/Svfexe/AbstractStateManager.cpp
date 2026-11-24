@@ -234,13 +234,14 @@ IntervalValue AbstractInterpretation::getGepElementIndex(const GepStmt* gep)
             if (Options::ModelArrays())
             {
                 const std::vector<u32_t>& so = PAG::getPAG()->getTypeInfo(type)->getFlattenedElemIdxVec();
-                if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
-                    idxLb = idxUb = 0;
-                else
-                {
-                    idxLb = PAG::getPAG()->getFlattenedElemIdx(type, idxLb);
-                    idxUb = PAG::getPAG()->getFlattenedElemIdx(type, idxUb);
-                }
+                idxLb = std::max<s64_t>(idxLb, 0);
+                idxUb = std::min(idxUb, static_cast<s64_t>(so.size()) - 1);
+                // Without an in-bounds index, retain all modeled offsets of
+                // the base object, including any surrounding aggregate.
+                if (idxLb > idxUb)
+                    return IntervalValue::top();
+                idxLb = PAG::getPAG()->getFlattenedElemIdx(type, idxLb);
+                idxUb = PAG::getPAG()->getFlattenedElemIdx(type, idxUb);
             }
             else
                 idxLb = idxUb = 0;
@@ -320,10 +321,10 @@ AddressValue AbstractInterpretation::getGepObjAddrs(const ICFGNode* node,
     // pointer's definition: in sparse mode the definition may have no state.
     AddressValue gepAddrs;
     AbstractState& as = getAbsState(node);
-    APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()
-                  : Options::MaxFieldLimit();
-    APOffset ub = offset.ub().getIntNumeral() < Options::MaxFieldLimit() ? offset.ub().getIntNumeral()
-                  : Options::MaxFieldLimit();
+    const bool unknownOffset = offset.isTop();
+    const APOffset fieldLimit = Options::MaxFieldLimit();
+    APOffset lb = unknownOffset ? 0 : std::min(offset.lb().getIntNumeral(), fieldLimit);
+    APOffset ub = unknownOffset ? fieldLimit : std::min(offset.ub().getIntNumeral(), fieldLimit);
     for (APOffset i = lb; i <= ub; i++)
     {
         const AbstractValue& addrs = getAbsValue(pointer, node);
@@ -334,6 +335,11 @@ AddressValue AbstractInterpretation::getGepObjAddrs(const ICFGNode* node,
                 continue;
             s64_t baseObj = as.getIDFromAddr(addr);
             assert(SVFUtil::isa<ObjVar>(pag->getSVFVar(baseObj)) && "Fail to get the base object address!");
+            if (unknownOffset)
+            {
+                if (const auto* gepObj = SVFUtil::dyn_cast<GepObjVar>(pag->getSVFVar(baseObj)))
+                    baseObj = gepObj->getBaseNode();
+            }
             NodeID gepObj = pag->getGepObjVar(baseObj, i);
             as[gepObj] = AddressValue(AbstractState::getVirtualMemAddress(gepObj));
             gepAddrs.insert(AbstractState::getVirtualMemAddress(gepObj));
