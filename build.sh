@@ -53,11 +53,13 @@ UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLV
 WindowsLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-pc-windows-msvc.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 
-Z3PrebuiltBase="https://github.com/SVF-tools/SVF-npm/raw/prebuilt-libs"
-UbuntuZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x86_64-ubuntu-22.04.zip"
-UbuntuZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-ubuntu-22.04.zip"
-MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-macos-14.zip"
-WindowsZ3="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}/z3-${Z3Ver}-x64-win.zip"
+Z3PrebuiltBase="https://github.com/Z3Prover/z3/releases/download/z3-${Z3Ver}"
+# The official wheel contains the native SDK and supports Ubuntu 22.04 onward.
+UbuntuZ3="${Z3PrebuiltBase}/z3_solver-${Z3Ver}.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+UbuntuZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-glibc-2.34.zip"
+MacOSZ3Arm="${Z3PrebuiltBase}/z3-${Z3Ver}-arm64-osx-13.7.6.zip"
+MacOSZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x64-osx-13.7.6.zip"
+WindowsZ3="${Z3PrebuiltBase}/z3-${Z3Ver}-x64-win.zip"
 
 BUILD_TYPE="Release"
 BUILD_DYN_LIB="ON"
@@ -82,6 +84,8 @@ Options:
 Environment variables:
   LLVM_DIR           Use an existing LLVM installation.
   Z3_DIR             Use an existing Z3 installation.
+  GMP_DIR, MPFR_DIR  Use existing GMP and MPFR installations.
+  VCPKG_DIR          Path to a standalone vcpkg installation for MSVC.
   SVF_BUILD_JOBS     Number of parallel build jobs. Default: 8.
   SVF_SANITIZER      Sanitizer option passed to CMake.
   SVF_ENABLE_ASSERTIONS  Enable assertions. Default: ON.
@@ -190,18 +194,14 @@ select_dependency_urls() {
             urlZ3="$UbuntuZ3Arm"
             ;;
         macos-arm64)
-            # LLVM is installed via Homebrew on macOS. Z3 uses SVF's prebuilt package.
+            # LLVM uses Homebrew on macOS. Z3 uses its official prebuilt package.
             urlLLVM=""
             urlZ3="$MacOSZ3Arm"
             ;;
         macos-x86_64)
-            # LLVM is installed via Homebrew on macOS. No owned prebuilt Z3 is provided for this case.
+            # The official release also provides a prebuilt Z3 for Intel Macs.
             urlLLVM=""
-            urlZ3=""
-            if [[ -z "${Z3_DIR:-}" ]]; then
-                echo "Warning: no prebuilt Z3 package is available for macOS x86_64."
-                echo "  Set Z3_DIR to a compatible z3.obj directory before running build.sh."
-            fi
+            urlZ3="$MacOSZ3"
             ;;
     esac
 }
@@ -442,6 +442,13 @@ unpack_z3_package() {
     mkdir "$unpack_dir"
     unzip -q "$archive" -d "$unpack_dir"
 
+    # The manylinux wheel stores its executable and shared libraries separately.
+    local wheel_bin="$unpack_dir/z3_solver-${Z3Ver}.0.data/data/bin/z3"
+    if [[ -f "$wheel_bin" ]]; then
+        mkdir "$unpack_dir/z3/bin"
+        mv "$wheel_bin" "$unpack_dir/z3/lib"/libz3.so* "$unpack_dir/z3/bin/"
+    fi
+
     # Some prebuilt packages may contain another z3-*.zip. Unpack any nested package once.
     while IFS= read -r -d '' nested_zip; do
         nested_dir="$unpack_dir/nested-$(basename "$nested_zip" .zip)"
@@ -510,6 +517,58 @@ ensure_z3() {
     fi
 }
 
+ensure_gmp_mpfr() {
+    export GMP_DIR MPFR_DIR
+    if [[ -d "${GMP_DIR:-}" && -d "${MPFR_DIR:-}" ]]; then
+        return
+    fi
+
+    local prefix
+    case "$PLATFORM" in
+        ubuntu-*)
+            local native_arch sudo_cmd=()
+            native_arch=$(dpkg --print-architecture)
+            local packages=("libgmp-dev:$native_arch" "libmpfr-dev:$native_arch")
+            # Skip apt and sudo when both development packages are installed.
+            if [[ $(dpkg-query -W -f='${db:Status-Status}\n' "${packages[@]}" 2>/dev/null) == $'installed\ninstalled' ]]; then
+                return
+            fi
+            if (( EUID != 0 )); then sudo_cmd=(sudo); fi
+            "${sudo_cmd[@]}" apt-get update
+            "${sudo_cmd[@]}" apt-get install -y "${packages[@]}"
+            return
+            ;;
+        macos-*)
+            local PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+            if ! brew list --versions gmp mpfr >/dev/null 2>&1; then
+                check_and_install_brew
+                brew install gmp mpfr
+            fi
+            prefix=$(brew --prefix)
+            GMP_DIR="${GMP_DIR:-$prefix/opt/gmp}"
+            MPFR_DIR="${MPFR_DIR:-$prefix/opt/mpfr}"
+            return
+            ;;
+        windows-mingw)
+            local pkg="${MINGW_PACKAGE_PREFIX:-mingw-w64-clang-x86_64}"
+            pacman -S --needed --noconfirm "$pkg-gmp" "$pkg-mpfr"
+            prefix=$(cygpath -m "${MINGW_PREFIX:-/clang64}")
+            ;;
+        windows-msvc)
+            # Visual Studio also sets VCPKG_ROOT for its manifest-only copy.
+            local install_root vcpkg=vcpkg.exe root="${VCPKG_DIR:-${VCPKG_INSTALLATION_ROOT:-${VCPKG_ROOT:-}}}"
+            if [[ -n "$root" ]]; then vcpkg="$(cygpath -u "$root")/vcpkg.exe"; fi
+            install_root=$(cygpath -m "$SVFHOME/.deps/vcpkg")
+            local triplet=x64-windows-static-release
+            MSYS2_ARG_CONV_EXCL='*' "$vcpkg" install --classic "--x-install-root=$install_root" \
+                "--triplet=$triplet" "--host-triplet=$triplet" gmp mpfr
+            prefix="$install_root/$triplet"
+            ;;
+    esac
+    GMP_DIR="${GMP_DIR:-$prefix}"
+    MPFR_DIR="${MPFR_DIR:-$prefix}"
+}
+
 configure_runtime_env() {
     export PATH="$LLVM_DIR/bin:$Z3_DIR/bin:$PATH"
     local llvm_lib_dirs="$LLVM_DIR/lib"
@@ -543,6 +602,8 @@ build_svf() {
             -G "Ninja"
             -DCMAKE_C_COMPILER=cl
             -DCMAKE_CXX_COMPILER=cl
+            # Match the static release runtime in the prebuilt LLVM and vcpkg libraries.
+            "-DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY:-MultiThreaded}"
             -DSVF_WARN_AS_ERROR=OFF
             -DSVF_EXPORT_DYNAMIC=OFF
             -DSVF_Z3=ON
@@ -646,6 +707,7 @@ main() {
 
     ensure_llvm
     ensure_z3
+    ensure_gmp_mpfr
     configure_runtime_env
     build_svf
 
