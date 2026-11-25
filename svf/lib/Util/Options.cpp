@@ -796,6 +796,11 @@ const OptionMap<u32_t> Options::AESparsity(
         "Sparse abstract execution via SVFG."
     }
 });
+const Option<std::string> Options::AEEntry(
+    "ae-entry",
+    "C function name or exact LLVM symbol (mangled for C++); file:name disambiguates static functions, needs -g. AE only.",
+    ""
+);
 const OptionMap<u32_t> Options::AEFunEntry(
     "ae-fun-entry",
     "Abstract execution function entry mode (Default: main)",

@@ -66,8 +66,9 @@ AbstractInterpretation::AbstractInterpretation()
     icfg = pag->getICFG();
     preAnalysis = new AEWTO(pag, icfg);
     callGraph = preAnalysis->getCallGraph();
+    userEntry = resolveUserEntry(callGraph);
     icfg->updateCallGraph(callGraph);
-    preAnalysis->initWTO();
+    preAnalysis->initWTO(userEntry);
 }
 
 /// Factory: first call allocates the concrete subclass based on
@@ -116,12 +117,113 @@ AbstractInterpretation::~AbstractInterpretation()
     delete preAnalysis;
 }
 
+const FunObjVar* AbstractInterpretation::resolveUserEntry(const CallGraph* callGraph)
+{
+    const std::string& request = Options::AEEntry();
+    if (request.empty())
+        return nullptr;
+    if (Options::AEFunEntry() == AEFunEntryMode::NO_MAIN)
+    {
+        SVFUtil::errs() << SVFUtil::errMsg(
+                           "AE -ae-entry and -ae-fun-entry=no-main are mutually exclusive.\n");
+        assert(false && "Mutually exclusive AE entry options");
+        abort();
+    }
+
+    const auto colon = request.rfind(':');
+    const bool qualified = colon != std::string::npos;
+    const std::string file = qualified ? request.substr(0, colon) : "";
+    const std::string name = qualified ? request.substr(colon + 1) : request;
+    // FunObjVar carries the function's location as: "ln": N, "file": "path".
+    const auto location = [](const FunObjVar* fun)
+    {
+        const std::string loc = fun->getSourceLoc();
+        std::pair<std::string, std::string> result;
+        const auto fileKey = loc.find("\"file\": \"");
+        const auto lineKey = loc.find("\"ln\": ");
+        if (fileKey == std::string::npos || lineKey == std::string::npos)
+            return result;
+        const auto start = fileKey + 9;
+        const auto end = loc.find('"', start);
+        const auto lineStart = lineKey + 6;
+        const auto lineEnd = loc.find_first_not_of("0123456789", lineStart);
+        if (end != std::string::npos && end > start && lineEnd != lineStart)
+        {
+            result.first = loc.substr(start, end - start);
+            result.second = loc.substr(lineStart, lineEnd - lineStart);
+        }
+        return result;
+    };
+    std::vector<const FunObjVar*> candidates;
+    std::vector<const FunObjVar*> definitions;
+    bool declaration = false;
+    bool missingDebug = false;
+    for (auto it = callGraph->begin(); it != callGraph->end(); ++it)
+    {
+        const FunObjVar* fun = it->second->getFunction();
+        const std::string& symbol = fun->getName();
+        const auto dot = symbol.rfind('.');
+        const std::string sourceName =
+            dot != std::string::npos && dot + 1 < symbol.size() &&
+            symbol.find_first_not_of("0123456789", dot + 1) == std::string::npos
+            ? symbol.substr(0, dot) : symbol;
+        if (symbol != name && sourceName != name)
+            continue;
+        if (fun->isDeclaration())
+        {
+            declaration = true;
+            continue;
+        }
+        definitions.push_back(fun);
+        const auto loc = location(fun);
+        missingDebug |= loc.first.empty();
+        if (qualified && (file.empty() || loc.first.size() < file.size() ||
+                          loc.first.compare(loc.first.size() - file.size(), file.size(), file) != 0 ||
+                          (loc.first.size() > file.size() &&
+                           loc.first[loc.first.size() - file.size() - 1] != '/')))
+            continue;
+        candidates.push_back(fun);
+    }
+    if (candidates.size() == 1)
+        return candidates.front();
+
+    std::string message = "AE -ae-entry='" + request + "' ";
+    if (!definitions.empty())
+    {
+        const bool ambiguous = candidates.size() > 1;
+        message += ambiguous ? "is ambiguous. Candidates:\n"
+                   : "has no definition in " + file + ". Definitions:\n";
+        for (const FunObjVar* fun : ambiguous ? candidates : definitions)
+        {
+            const auto loc = location(fun);
+            message += "  " + fun->getName() + " (" +
+                       (loc.first.empty() ? "no debug info" : loc.first + ":" + loc.second) + ")\n";
+        }
+        if (ambiguous)
+            message += "Qualify with file:name (needs -g) or pass the exact LLVM symbol.";
+        else if (missingDebug)
+            message += "Compile with -g to use a file:name qualifier.";
+    }
+    else
+    {
+        message += declaration ? "has no body (declaration only)." : "was not found.";
+    }
+    SVFUtil::errs() << SVFUtil::errMsg(message + "\n");
+    assert(false && "Invalid AE entry function");
+    abort();
+}
+
 /// Collect entry point functions for analysis.
 /// In main mode, entry is main/svf.main. In no-main mode,
 /// entries are SCCs with no external caller in the Andersen-resolved CallGraph.
 FIFOWorkList<const FunObjVar*> AbstractInterpretation::collectProgEntryFuns()
 {
     FIFOWorkList<const FunObjVar*> entryFunctions;
+    if (const FunObjVar* entry = userEntry)
+    {
+        entryFunctions.push(entry);
+        return entryFunctions;
+    }
     const bool mainEntry = Options::AEFunEntry() == AEFunEntryMode::MAIN;
     Set<NodeID> visitedEntrySCCs;
     auto* callGraphSCC = preAnalysis->getCallGraphSCC();
@@ -271,6 +373,16 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
     AbstractState merged;
     bool hasFeasiblePred = false;
 
+    // The custom entry is reachable independently of its callers. Keep this
+    // boundary on every recursive iteration, joining any recursive feedback.
+    // It skips svf.main, hence C++ global constructors and destructors.
+    if (userEntry && SVFUtil::isa<FunEntryICFGNode>(node) &&
+            node->getFun() == userEntry)
+    {
+        joinStates(merged, getAbsState(icfg->getGlobalICFGNode()));
+        hasFeasiblePred = true;
+    }
+
     for (auto& edge : node->getInEdges())
     {
         const ICFGNode* pred = edge->getSrcNode();
@@ -316,13 +428,17 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode* node)
 
         if (feasible)
         {
-            if (Options::AESparsity() == AESparsity::Sparse)
+            if (Options::AESparsity() == AESparsity::Sparse && !userEntry)
             {
                 // getAEInstance() selects this class for Sparse mode.
                 static_cast<FullSparseAbstractInterpretation*>(this)->mergeFreedAddrs(merged, predState);
             }
             else
+            {
+                // A custom full-sparse entry uses a conservative dense-memory
+                // fallback: SVFG global-store inputs are wired to main/svf.main.
                 joinStates(merged, predState);
+            }
             hasFeasiblePred = true;
         }
     }
@@ -761,7 +877,18 @@ void AbstractInterpretation::handleICFGNode(const ICFGNode* node)
     stat->getBlockTrace()++;
     stat->getICFGNodeTrace()++;
 
-    // Handle SVF statements
+    // Custom-entry integers start at top and pointers at BlackHole.
+    if (userEntry && isFunEntry && node->getFun() == userEntry)
+    {
+        const auto* entry = SVFUtil::cast<FunEntryICFGNode>(node);
+        for (const SVFVar* param : entry->getFormalParms())
+        {
+            AbstractValue value = param->getType()->isPointerTy()
+                                  ? AbstractValue(AddressValue(BlackHoleObjAddr))
+                                  : AbstractValue(IntervalValue::top());
+            updateAbsValue(param, value, node);
+        }
+    }
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
         handleSVFStatement(stmt);
@@ -1117,6 +1244,13 @@ void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
     const ICFGNode* node = callPE->getICFGNode();
     const SVFVar* res = callPE->getRes();
     AbstractValue rhs;
+    // Preserve the external caller's unknown arguments through CallPE merges.
+    if (userEntry && node->getFun() == userEntry)
+    {
+        rhs = res->getType()->isPointerTy()
+              ? AbstractValue(AddressValue(BlackHoleObjAddr))
+              : AbstractValue(IntervalValue::top());
+    }
     for (u32_t i = 0; i < callPE->getOpVarNum(); i++)
     {
         const ICFGNode* opICFGNode = callPE->getOpCallICFGNode(i);
