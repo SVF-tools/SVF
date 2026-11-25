@@ -234,13 +234,19 @@ IntervalValue AbstractInterpretation::getGepElementIndex(const GepStmt* gep)
             if (Options::ModelArrays())
             {
                 const std::vector<u32_t>& so = PAG::getPAG()->getTypeInfo(type)->getFlattenedElemIdxVec();
-                if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
-                    idxLb = idxUb = 0;
-                else
-                {
-                    idxLb = PAG::getPAG()->getFlattenedElemIdx(type, idxLb);
-                    idxUb = PAG::getPAG()->getFlattenedElemIdx(type, idxUb);
-                }
+                // Return the range of fields this array access may touch.
+                // First keep only the indices that fall inside the array.
+                // For example, for int a[4] (valid indices [0, 3]) and access a[i]:
+                //   i = ⊤      -> [0, 3]   (a load joins a[0]..a[3])
+                //   i = [1, 4] -> [1, 3]
+                // If no index falls inside the array, conservatively return ⊤:
+                //   i = [5, 6] -> ⊤
+                idxLb = std::max<s64_t>(idxLb, 0);
+                idxUb = std::min(idxUb, static_cast<s64_t>(so.size()) - 1);
+                if (idxLb > idxUb)
+                    return IntervalValue::top();
+                idxLb = PAG::getPAG()->getFlattenedElemIdx(type, idxLb);
+                idxUb = PAG::getPAG()->getFlattenedElemIdx(type, idxUb);
             }
             else
                 idxLb = idxUb = 0;
@@ -320,10 +326,14 @@ AddressValue AbstractInterpretation::getGepObjAddrs(const ICFGNode* node,
     // pointer's definition: in sparse mode the definition may have no state.
     AddressValue gepAddrs;
     AbstractState& as = getAbsState(node);
-    APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()
-                  : Options::MaxFieldLimit();
-    APOffset ub = offset.ub().getIntNumeral() < Options::MaxFieldLimit() ? offset.ub().getIntNumeral()
-                  : Options::MaxFieldLimit();
+    // Decide which fields the access may touch, counted from the field the
+    // pointer points to. If the offset is unknown (⊤), conservatively cover
+    // every field up to fieldLimit, the most fields SVF models per object.
+    // Otherwise use the offset range, capped at fieldLimit.
+    const bool unknownOffset = offset.isTop();
+    const APOffset fieldLimit = Options::MaxFieldLimit();
+    APOffset lb = unknownOffset ? 0 : std::min(offset.lb().getIntNumeral(), fieldLimit);
+    APOffset ub = unknownOffset ? fieldLimit : std::min(offset.ub().getIntNumeral(), fieldLimit);
     for (APOffset i = lb; i <= ub; i++)
     {
         const AbstractValue& addrs = getAbsValue(pointer, node);
